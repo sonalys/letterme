@@ -1,7 +1,6 @@
 package models
 
 import (
-	"crypto/rsa"
 	"fmt"
 	"time"
 
@@ -32,8 +31,8 @@ type InternalEmailRequest struct {
 }
 
 // Encrypt implements encryptable interface.
-func (m *InternalEmailRequest) Encrypt(k *rsa.PublicKey) error {
-	if buf, err := cryptography.Encrypt(k, []byte(m.From)); err == nil {
+func (m *InternalEmailRequest) Encrypt(k *PublicKey) error {
+	if buf, err := cryptography.Encrypt(k.Get(), []byte(m.From)); err == nil {
 		m.Email.From = EncryptedBuffer{
 			Buffer:    buf,
 			Algorithm: RSA_OAEP,
@@ -43,7 +42,7 @@ func (m *InternalEmailRequest) Encrypt(k *rsa.PublicKey) error {
 	}
 
 	for i := range m.ToList {
-		if buf, err := cryptography.Encrypt(k, []byte(m.ToList[i])); err == nil {
+		if buf, err := cryptography.Encrypt(k.Get(), []byte(m.ToList[i])); err == nil {
 			m.Email.ToList = append(m.Email.ToList, EncryptedBuffer{
 				Buffer:    buf,
 				Algorithm: RSA_OAEP,
@@ -103,6 +102,9 @@ type Email struct {
 	// ValidUntil is a cached TTL date for the file deletion into the database,
 	// different users can have different ttl for their data.
 	ValidUntil time.Time `json:"valid_until"`
+	// ReadCount is a state used to count how many devices confirmed the receivement of this email,
+	// when read_count reaches the user.device_count, it will be deleted will all it's attachments.
+	ReadCount uint8 `json:"read_count"`
 
 	// From represents the sender address from this email,
 	// It has already been processed and its encrypted.

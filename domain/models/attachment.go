@@ -1,7 +1,6 @@
 package models
 
 import (
-	"crypto/rsa"
 	"errors"
 	"time"
 
@@ -16,8 +15,8 @@ type AttachmentRequest struct {
 }
 
 // Encrypt implements encryptable interface.
-func (m AttachmentRequest) Encrypt(k *rsa.PublicKey) error {
-	if buf, err := cryptography.Encrypt(k, []byte(m.URL)); err == nil {
+func (m AttachmentRequest) Encrypt(k *PublicKey) error {
+	if buf, err := cryptography.Encrypt(k.Get(), []byte(m.URL)); err == nil {
 		m.Attachment.URL = EncryptedBuffer{
 			Buffer:    buf,
 			Algorithm: RSA_OAEP,
