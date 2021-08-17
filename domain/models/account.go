@@ -16,6 +16,7 @@ type Account struct {
 	// PublicKey is used to encrypt all data sent to this user.
 	PublicKey PublicKey `json:"public_key"`
 	// Ownershipkey is used to re-upload a new private key to recover the used addresses, all the previous data is lost however.
+	// It must be used only to this mean, for authentication, use JWT.
 	OwnershipKey string `json:"ownership_key"`
 	// DeviceCount is used to keep emails and attachments into backend for multiple read confirmations before deleting it.
 	DeviceCount uint8 `json:"device_count"`
