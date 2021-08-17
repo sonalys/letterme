@@ -77,8 +77,8 @@ func Test_Mongo(t *testing.T) {
 
 	t.Run("should get first document", func(t *testing.T) {
 		var item models.Account
-		err := col.First(ctx, map[string]interface{}{
-			"ownershipKey": "456",
+		err := col.First(ctx, models.Account{
+			OwnershipKey: "456",
 		}, &item)
 		require.NoError(t, err)
 		require.Equal(t, "456", item.OwnershipKey)
@@ -86,16 +86,16 @@ func Test_Mongo(t *testing.T) {
 
 	t.Run("should get list two document", func(t *testing.T) {
 		var items []models.Account
-		err := col.List(ctx, map[string]interface{}{
-			"ownershipKey": "123",
+		err := col.List(ctx, models.Account{
+			OwnershipKey: "123",
 		}, &items)
 		require.NoError(t, err)
 		require.Len(t, items, 2, "should return 2 items")
 	})
 
 	t.Run("should update one document", func(t *testing.T) {
-		err := col.Update(ctx, map[string]interface{}{
-			"ownershipKey": "456",
+		err := col.Update(ctx, models.Account{
+			OwnershipKey: "456",
 		}, map[string]interface{}{
 			"$inc": models.Account{
 				DeviceCount: 2,
@@ -103,8 +103,8 @@ func Test_Mongo(t *testing.T) {
 		})
 		require.NoError(t, err)
 		var item models.Account
-		err = col.First(ctx, map[string]interface{}{
-			"ownershipKey": "456",
+		err = col.First(ctx, models.Account{
+			OwnershipKey: "456",
 		}, &item)
 		require.NoError(t, err)
 		require.Equal(t, uint8(2), item.DeviceCount)
