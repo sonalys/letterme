@@ -2,32 +2,18 @@ package persistence
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"os"
 	"testing"
 
+	"github.com/sonalys/letterme/account_manager/utils"
 	"github.com/sonalys/letterme/domain/models"
 	"github.com/stretchr/testify/require"
 )
-
-const mongo_env = "LM_MONGO_SETTINGS"
-
-func loadFromEnv(key string, dst interface{}) error {
-	if val, ok := os.LookupEnv(key); ok {
-		if err := json.Unmarshal([]byte(val), dst); err != nil {
-			return err
-		}
-		return nil
-	}
-	return fmt.Errorf("error loading config from env: '%s' not found", key)
-}
 
 func Test_Mongo(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var cfg Configuration
-	if err := loadFromEnv(mongo_env, &cfg); err != nil {
+	if err := utils.LoadFromEnv(MONGO_ENV, &cfg); err != nil {
 		require.Fail(t, err.Error())
 	}
 

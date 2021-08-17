@@ -8,3 +8,7 @@ start_mongo:
 test:
 	LM_MONGO_SETTINGS='{ "hosts": [${mongo_address}], "db_name": "account_manager", "session_name": "account_manager_ms" }' \
 	go test ./...
+
+gen:
+	rm -rf ./mocks/*.go
+	mockery --dir ./interfaces/ --all --case underscore --disable-version-string

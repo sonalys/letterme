@@ -11,6 +11,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// MONGO_ENV is used to get configs from env.
+const MONGO_ENV = "LM_MONGO_SETTINGS"
+
 // Mongo is used to interface with persistence definitions.
 type Mongo struct {
 	ctx    context.Context
