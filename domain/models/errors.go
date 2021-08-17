@@ -1,8 +1,8 @@
 package models
 
 import (
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 )
 
 // ErrorResponse is the schema of default http errors
@@ -12,7 +12,7 @@ type ErrorResponse struct {
 }
 
 const (
-	invalidType = "%s '%s' is not valid: %s"
+	invalidType = "%s '%s' is not valid"
 	emptyField  = "field '%s' cannot be empty"
 
 	emailInvalid = "email is not valid: %#v"
@@ -20,20 +20,20 @@ const (
 
 	attachmentInvalid = "attachment is not valid: %#v"
 
-	encryptionError = "failed to encrypt %T: %s"
-	decryptionError = "failed to decrypt %T: %s"
+	encryptionError = "failed to encrypt %T"
+	decryptionError = "failed to decrypt %T"
 )
 
 func newEncryptionError(obj interface{}, err error) error {
-	return fmt.Errorf(encryptionError, obj, err)
+	return errors.Wrap(err, fmt.Sprintf(encryptionError, obj))
 }
 
 func newDecryptionError(obj interface{}, err error) error {
-	return fmt.Errorf(decryptionError, obj, err)
+	return errors.Wrap(err, fmt.Sprintf(decryptionError, obj))
 }
 
 func newInvalidTypeError(typeName, fieldName string, err error) error {
-	return fmt.Errorf(invalidType, typeName, fieldName, err)
+	return errors.Wrap(err, fmt.Sprintf(invalidType, typeName, fieldName))
 }
 
 func newEmptyFieldError(fieldName string) error {

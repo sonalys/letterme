@@ -8,9 +8,9 @@ import (
 
 // Service creates an interface to mock it outside controller layer.
 type Service interface {
-	CreateAccount(ctx context.Context, account models.Account) (ownershipToken string, err error)
-	DeleteAccount(ctx context.Context, ownershipToken string) (err error)
-	GetAccount(ctx context.Context, ownershipToken string) (account models.Account, err error)
+	CreateAccount(ctx context.Context, account models.Account) (encryptedOwnershipToken models.EncryptedBuffer, err error)
+	DeleteAccount(ctx context.Context, ownershipToken models.OwnershipKey) (err error)
+	GetAccount(ctx context.Context, ownershipToken models.OwnershipKey) (account models.Account, err error)
 	GetPublicKey(ctx context.Context, address models.Address) (publicKey *models.PublicKey, err error)
 	ResetPublicKey(ctx context.Context, accountID models.DatabaseID) (account *models.Account, err error)
 	AddNewDevice(ctx context.Context, accountID models.DatabaseID) (encryptedPrivateKey *models.EncryptedBuffer, err error)

@@ -16,6 +16,10 @@ func Test_GetAccount(t *testing.T) {
 	})
 	require.NoError(t, err)
 	col := svc.Persistence.GetCollection("account")
+	defer t.Run("cleanup", func(t *testing.T) {
+		err := col.Delete(ctx, filter{})
+		require.NoError(t, err, "should clear collection")
+	})
 
 	account := models.Account{
 		OwnershipKey: "123",
@@ -39,10 +43,5 @@ func Test_GetAccount(t *testing.T) {
 		require.NoError(t, err, "should delete account")
 		require.NotNil(t, dbAccount, "should return account")
 		require.Equal(t, account.OwnershipKey, dbAccount.OwnershipKey, "should return account")
-	})
-
-	defer t.Run("cleanup", func(t *testing.T) {
-		err := col.Delete(ctx, filter{})
-		require.NoError(t, err, "should clear collection")
 	})
 }

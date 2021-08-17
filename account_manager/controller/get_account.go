@@ -8,7 +8,7 @@ import (
 
 // GetAccount returns all available information about the owners account.
 // returns error if ownership doesn't exist.
-func (s *Service) GetAccount(ctx context.Context, ownershipToken string) (account *models.Account, err error) {
+func (s *Service) GetAccount(ctx context.Context, ownershipToken models.OwnershipKey) (account *models.Account, err error) {
 	col := s.Persistence.GetCollection("account")
 	account = &models.Account{
 		OwnershipKey: ownershipToken,

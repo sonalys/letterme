@@ -1,36 +1,37 @@
 package persistence
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/pkg/errors"
 )
 
 const (
-	errInvalidConfiguration = "invalid mongo configuration: %s"
-	errInstance             = "failed to create mongo instance: %s"
-	errConnect              = "failed to connect to mongo: %s"
+	errInvalidConfiguration = "invalid mongo configuration"
+	errInstance             = "failed to create mongo instance"
+	errConnect              = "failed to connect to mongo"
 	errNotFound             = "no documents were found"
-	errCustom               = "database error: %s"
-	errDecode               = "failed to decode result to dst: %s"
+	errCustom               = "database error"
+	errDecode               = "failed to decode result to dst"
 	errCast                 = "failed to cast from %T to %T"
-	errOperation            = "error %s documents: %s"
-	errCollectionOperation  = "failed to %s collection '%s': %s"
+	errOperation            = "error %s documents"
+	errCollectionOperation  = "failed to %s collection '%s'"
 )
 
 func newInvalidConfigurationError(err error) error {
-	return fmt.Errorf(errInvalidConfiguration, err)
+	return errors.Wrap(err, errInvalidConfiguration)
 }
 
 func newInstanceError(err error) error {
-	return fmt.Errorf(errInstance, err)
+	return errors.Wrap(err, errInstance)
 }
 
 func newConnectError(err error) error {
-	return fmt.Errorf(errConnect, err)
+	return errors.Wrap(err, errConnect)
 }
 
 func newCustomError(err error) error {
-	return fmt.Errorf(errCustom, err)
+	return errors.Wrap(err, errCustom)
 }
 
 func newNotFoundError() error {
@@ -38,7 +39,7 @@ func newNotFoundError() error {
 }
 
 func newDecodeError(err error) error {
-	return fmt.Errorf(errDecode, err)
+	return errors.Wrap(err, errDecode)
 }
 
 func newCastError(t1, t2 interface{}) error {
@@ -46,9 +47,9 @@ func newCastError(t1, t2 interface{}) error {
 }
 
 func newOperationError(opName string, err error) error {
-	return fmt.Errorf(errOperation, opName, err)
+	return errors.Wrap(err, fmt.Sprintf(errOperation, opName))
 }
 
 func newCollectionOperationError(opName, colName string, err error) error {
-	return fmt.Errorf(errCollectionOperation, opName, colName, err)
+	return errors.Wrap(err, fmt.Sprintf(errCollectionOperation, opName, colName))
 }

@@ -41,7 +41,7 @@ func Test_Mongo(t *testing.T) {
 	// Test
 	t.Run("should create one document", func(t *testing.T) {
 		doc := models.Account{
-			OwnershipKey: "123",
+			OwnershipKey: models.OwnershipKey("123"),
 		}
 
 		ids, err := col.Create(ctx, doc)
@@ -51,8 +51,8 @@ func Test_Mongo(t *testing.T) {
 
 	t.Run("should create multiple documents", func(t *testing.T) {
 		docs := []models.Account{
-			{OwnershipKey: "123"},
-			{OwnershipKey: "456"},
+			{OwnershipKey: models.OwnershipKey("123")},
+			{OwnershipKey: models.OwnershipKey("456")},
 		}
 
 		ids, err := col.Create(ctx, docs[0], docs[1])
@@ -63,16 +63,16 @@ func Test_Mongo(t *testing.T) {
 	t.Run("should get first document", func(t *testing.T) {
 		var item models.Account
 		err := col.First(ctx, models.Account{
-			OwnershipKey: "456",
+			OwnershipKey: models.OwnershipKey("456"),
 		}, &item)
 		require.NoError(t, err)
-		require.Equal(t, "456", item.OwnershipKey)
+		require.Equal(t, models.OwnershipKey("456"), item.OwnershipKey)
 	})
 
 	t.Run("should get list two document", func(t *testing.T) {
 		var items []models.Account
 		err := col.List(ctx, models.Account{
-			OwnershipKey: "123",
+			OwnershipKey: models.OwnershipKey("123"),
 		}, &items)
 		require.NoError(t, err)
 		require.Len(t, items, 2, "should return 2 items")
@@ -80,7 +80,7 @@ func Test_Mongo(t *testing.T) {
 
 	t.Run("should update one document", func(t *testing.T) {
 		err := col.Update(ctx, models.Account{
-			OwnershipKey: "456",
+			OwnershipKey: models.OwnershipKey("456"),
 		}, map[string]interface{}{
 			"$inc": models.Account{
 				DeviceCount: 2,
@@ -89,11 +89,11 @@ func Test_Mongo(t *testing.T) {
 		require.NoError(t, err)
 		var item models.Account
 		err = col.First(ctx, models.Account{
-			OwnershipKey: "456",
+			OwnershipKey: models.OwnershipKey("456"),
 		}, &item)
 		require.NoError(t, err)
 		require.Equal(t, uint8(2), item.DeviceCount)
-		require.Equal(t, "456", item.OwnershipKey)
+		require.Equal(t, models.OwnershipKey("456"), item.OwnershipKey)
 		require.NotEmpty(t, item.ID)
 	})
 }

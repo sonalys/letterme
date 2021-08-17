@@ -6,6 +6,7 @@ replace github.com/sonalys/letterme/domain => ../domain
 
 require (
 	github.com/google/uuid v1.3.0
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/sonalys/letterme/domain v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.6.1
@@ -18,7 +19,6 @@ require (
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/klauspost/compress v1.9.5 // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
