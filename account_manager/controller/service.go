@@ -1,6 +1,11 @@
 package controller
 
-import "github.com/sonalys/letterme/domain/models"
+import (
+	"context"
+
+	"github.com/sonalys/letterme/account_manager/interfaces"
+	"github.com/sonalys/letterme/domain/models"
+)
 
 // Service represents the api logic controller,
 // It uses of decoupled dependencies to execute business logic for specific cases.
@@ -9,18 +14,23 @@ import "github.com/sonalys/letterme/domain/models"
 // ResetPublicKey: should use persistence layer to fetch account from ownershipID, then update it's publicKey
 // to the new one, and delete all pending emails and attachments.
 type Service struct {
+	Context context.Context
 	*Dependencies
 }
 
 // Dependencies are the integrations required to initialize the service.
 type Dependencies struct {
+	interfaces.Persistence
 }
 
 // NewService initializes the api controller
 //
 // Here is where you want to start all sub-routines, dependencies validations, etc...
-func NewService(d *Dependencies) (*Service, error) {
-	return &Service{Dependencies: d}, nil
+func NewService(ctx context.Context, d *Dependencies) (*Service, error) {
+	return &Service{
+		Context:      ctx,
+		Dependencies: d,
+	}, nil
 }
 
 // GetPublicKey gets the publicKey associated with the given address,
