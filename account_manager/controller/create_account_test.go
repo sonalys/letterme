@@ -4,33 +4,18 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sonalys/letterme/account_manager/interfaces"
-	"github.com/sonalys/letterme/account_manager/persistence"
-	"github.com/sonalys/letterme/account_manager/utils"
 	"github.com/sonalys/letterme/domain/models"
 	"github.com/stretchr/testify/require"
 )
 
-func createPersistence(ctx context.Context, t *testing.T) interfaces.Persistence {
-	var cfg persistence.Configuration
-	if err := utils.LoadFromEnv(persistence.MONGO_ENV, &cfg); err != nil {
-		require.Fail(t, err.Error())
-	}
-
-	mongo, err := persistence.NewMongo(ctx, &cfg)
-	require.NoError(t, err, "should create without errors")
-
-	return mongo
-}
-
 func Test_CreateAccount(t *testing.T) {
 	ctx := context.Background()
 	db := createPersistence(ctx, t)
-
 	svc, err := NewService(ctx, &Dependencies{
 		Persistence: db,
 	})
 	require.NoError(t, err)
+	col := svc.Persistence.GetCollection("account")
 
 	account := models.Account{
 		Addresses: []models.Address{
@@ -47,7 +32,10 @@ func Test_CreateAccount(t *testing.T) {
 	})
 
 	t.Run("dbAccount verification", func(t *testing.T) {
-		dbAccount, err := svc.GetAccount(ctx, account.OwnershipKey)
+		var dbAccount models.Account
+		err := col.First(ctx, models.Account{
+			OwnershipKey: account.OwnershipKey,
+		}, &dbAccount)
 		require.NoError(t, err, "should create account")
 		require.NotNil(t, dbAccount, "account should return from db")
 		require.Equal(t, account.Addresses[:1], dbAccount.Addresses, "dbAccount should have only 1 email")
@@ -60,8 +48,8 @@ func Test_CreateAccount(t *testing.T) {
 		require.Empty(t, token, "ownershipToken should be empty")
 	})
 
-	defer func() {
-		err := svc.DeleteAccount(ctx, account.OwnershipKey)
-		require.NoError(t, err, "should create account")
-	}()
+	defer t.Run("cleanup", func(t *testing.T) {
+		err := col.Delete(ctx, filter{})
+		require.NoError(t, err, "should clear collection")
+	})
 }
