@@ -7,6 +7,10 @@ import (
 	"github.com/sonalys/letterme/domain/models"
 )
 
+// Alias for db filters.
+type filter map[string]interface{}
+type filterList []interface{}
+
 // Service represents the api logic controller,
 // It uses of decoupled dependencies to execute business logic for specific cases.
 // Examples:
@@ -35,19 +39,19 @@ func NewService(ctx context.Context, d *Dependencies) (*Service, error) {
 
 // GetPublicKey gets the publicKey associated with the given address,
 // will return error if the address doesn't exist.
-func (s *Service) GetPublicKey(address models.Address) (publicKey *models.PublicKey, err error) {
+func (s *Service) GetPublicKey(ctx context.Context, address models.Address) (publicKey *models.PublicKey, err error) {
 	return nil, nil
 }
 
 // ResetPublicKey will re-create the publicKey for the given accountID.
-func (s *Service) ResetPublicKey(accountID models.DatabaseID) (account *models.Account, err error) {
+func (s *Service) ResetPublicKey(ctx context.Context, accountID models.DatabaseID) (account *models.Account, err error) {
 	return nil, nil
 }
 
-func (s *Service) AddNewDevice(accountID models.DatabaseID) (encryptedPrivateKey *models.EncryptedBuffer, err error) {
+func (s *Service) AddNewDevice(ctx context.Context, accountID models.DatabaseID) (encryptedPrivateKey *models.EncryptedBuffer, err error) {
 	return nil, nil
 }
 
-func (s *Service) Authenticate(Address models.Address) (encryptedJWT *models.EncryptedBuffer, err error) {
+func (s *Service) Authenticate(ctx context.Context, Address models.Address) (encryptedJWT *models.EncryptedBuffer, err error) {
 	return nil, nil
 }

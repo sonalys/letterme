@@ -10,8 +10,7 @@ import (
 )
 
 func Test_Mongo(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 	var cfg Configuration
 	if err := utils.LoadFromEnv(MONGO_ENV, &cfg); err != nil {
 		require.Fail(t, err.Error())

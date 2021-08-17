@@ -7,9 +7,6 @@ import (
 	"github.com/sonalys/letterme/domain/models"
 )
 
-type filter map[string]interface{}
-type filterList []interface{}
-
 // CreateAccount receives a new account model, it should be valid, and it's address should not exist already.
 func (s *Service) CreateAccount(ctx context.Context, account models.Account) (ownershipToken string, err error) {
 	col := s.Persistence.GetCollection("account")
@@ -27,7 +24,7 @@ func (s *Service) CreateAccount(ctx context.Context, account models.Account) (ow
 	account.OwnershipKey = uuid.NewString()
 
 	if _, err := col.Create(ctx, account); err != nil {
-		return "", err
+		return "", newAccountOperationError("create", err)
 	}
 
 	return account.OwnershipKey, nil
