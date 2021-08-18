@@ -7,11 +7,11 @@ import (
 	"github.com/sonalys/letterme/domain/cryptography"
 )
 
-// ExternalEmailRequest is used to receive emails from outside letter.me,
-// It contains decrypted content, and should be encrypted imediately after processing,
+// UnencryptedEmail is used to receive/send emails from/to outside letter.me,
+// It contains decrypted content, and should be encrypted imediately after processing.
 //
 // It needs to be processed first because it's encrypted using the public key of each recipient.
-type ExternalEmailRequest struct {
+type UnencryptedEmail struct {
 	From        Address   `json:"from"`
 	ToList      []Address `json:"to_list"`
 	Attachments [][]byte  `json:"attachments"`
