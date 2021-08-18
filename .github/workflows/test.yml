@@ -12,6 +12,15 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
+    - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.42
+    - name: mongoDB
+      uses: supercharge/mongodb-github-action@1.6.0
+      with:
+        mongodb-port: 2564
+        mongodb-version: '5.0'
     - name: Checkout code
       uses: actions/checkout@v2
     - name: run
