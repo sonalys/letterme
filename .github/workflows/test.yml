@@ -13,9 +13,9 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
     - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: v1.42
+      uses: golangci/golangci-lint-action@v2
+      with:
+        version: v1.42
     - name: mongoDB
       uses: supercharge/mongodb-github-action@1.6.0
       with:
