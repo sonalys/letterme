@@ -3,6 +3,8 @@ package models
 import (
 	"crypto/rsa"
 	"time"
+
+	"github.com/sonalys/letterme/domain/cryptography"
 )
 
 // Account represents an user account,
@@ -14,7 +16,7 @@ type Account struct {
 	// Addresses are the many email addresses posessed by this account.
 	Addresses []Address `json:"addresses" bson:"addresses,omitempty"`
 	// PublicKey is used to encrypt all data sent to this user.
-	PublicKey PublicKey `json:"public_key" bson:"publicKey,omitempty"`
+	PublicKey cryptography.PublicKey `json:"public_key" bson:"publicKey,omitempty"`
 	// Ownershipkey is used to re-upload a new private key to recover the used addresses, all the previous data is lost however.
 	// It must be used only to this mean, for authentication, use JWT.
 	OwnershipKey OwnershipKey `json:"ownership_key" bson:"ownershipKey,omitempty"`

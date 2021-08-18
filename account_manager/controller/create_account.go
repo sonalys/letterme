@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sonalys/letterme/domain/cryptography"
 	"github.com/sonalys/letterme/domain/models"
 )
 
 // CreateAccount receives a new account model, it should be valid, and it's address should not exist already.
-func (s *Service) CreateAccount(ctx context.Context, account models.Account) (ownershipToken *models.EncryptedBuffer, err error) {
+func (s *Service) CreateAccount(ctx context.Context, account models.Account) (ownershipToken *cryptography.EncryptedBuffer, err error) {
 	col := s.Persistence.GetCollection("account")
 	address := account.Addresses[0]
 	buf := new(models.Account)

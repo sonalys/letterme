@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
 	"os"
 	"os/signal"
 
 	"github.com/sonalys/letterme/account_manager/controller"
 	"github.com/sonalys/letterme/account_manager/persistence"
 	"github.com/sonalys/letterme/account_manager/utils"
+	"github.com/sonalys/letterme/domain/cryptography"
 )
 
 func main() {
@@ -35,7 +37,15 @@ func initializeDependencies(ctx context.Context) *controller.Dependencies {
 		panic(err)
 	}
 
+	router := cryptography.NewRouter()
+	if cypher, ok := os.LookupEnv(cryptography.CRYPTO_CYPHER_ENV); ok {
+		router.AddRSA_OAEP([]byte(cypher), sha256.New())
+	} else {
+		panic("cypher is not set")
+	}
+
 	return &controller.Dependencies{
-		Persistence: mongo,
+		Persistence:         mongo,
+		CryptographicRouter: router,
 	}
 }

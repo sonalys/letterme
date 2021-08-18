@@ -15,15 +15,15 @@ type AttachmentRequest struct {
 }
 
 // Encrypt implements encryptable interface.
-func (m AttachmentRequest) Encrypt(k *PublicKey) error {
-	if buf, err := cryptography.Encrypt(k.Get(), []byte(m.URL)); err == nil {
-		m.Attachment.URL = EncryptedBuffer{
-			Buffer:    buf,
-			Algorithm: RSA_OAEP,
-		}
-	} else {
-		return newEncryptionError(m, err)
-	}
+func (m AttachmentRequest) Encrypt(k *cryptography.PublicKey) error {
+	// if buf, err := cryptography.Encrypt(k.Get(), []byte(m.URL)); err == nil {
+	// 	m.Attachment.URL = cryptography.EncryptedBuffer{
+	// 		Buffer:    buf,
+	// 		Algorithm: cryptography.RSA_OAEP,
+	// 	}
+	// } else {
+	// 	return newEncryptionError(m, err)
+	// }
 
 	return nil
 }
@@ -57,7 +57,7 @@ type Attachment struct {
 	ValidUntil time.Time `json:"valid_until"`
 
 	// URL is the link for this encrypted attachment on the storage provider.
-	URL EncryptedBuffer `json:"url"`
+	URL cryptography.EncryptedBuffer `json:"url"`
 
 	// Size represents the attachment size in bytes.
 	Size     uint64   `json:"size"`

@@ -31,26 +31,26 @@ type InternalEmailRequest struct {
 }
 
 // Encrypt implements encryptable interface.
-func (m *InternalEmailRequest) Encrypt(k *PublicKey) error {
-	if buf, err := cryptography.Encrypt(k.Get(), []byte(m.From)); err == nil {
-		m.Email.From = EncryptedBuffer{
-			Buffer:    buf,
-			Algorithm: RSA_OAEP,
-		}
-	} else {
-		return newEncryptionError(m, err)
-	}
+func (m *InternalEmailRequest) Encrypt(k *cryptography.PublicKey) error {
+	// if buf, err := cryptography.Encrypt(k.Get(), []byte(m.From)); err == nil {
+	// 	m.Email.From = cryptography.EncryptedBuffer{
+	// 		Buffer:    buf,
+	// 		Algorithm: RSA_OAEP,
+	// 	}
+	// } else {
+	// 	return newEncryptionError(m, err)
+	// }
 
-	for i := range m.ToList {
-		if buf, err := cryptography.Encrypt(k.Get(), []byte(m.ToList[i])); err == nil {
-			m.Email.ToList = append(m.Email.ToList, EncryptedBuffer{
-				Buffer:    buf,
-				Algorithm: RSA_OAEP,
-			})
-		} else {
-			return newEncryptionError(m, err)
-		}
-	}
+	// for i := range m.ToList {
+	// 	if buf, err := cryptography.Encrypt(k.Get(), []byte(m.ToList[i])); err == nil {
+	// 		m.Email.ToList = append(m.Email.ToList, EncryptedBuffer{
+	// 			Buffer:    buf,
+	// 			Algorithm: RSA_OAEP,
+	// 		})
+	// 	} else {
+	// 		return newEncryptionError(m, err)
+	// 	}
+	// }
 
 	for i := range m.Attachments {
 		if err := m.Attachments[i].Encrypt(k); err == nil {
@@ -108,10 +108,10 @@ type Email struct {
 
 	// From represents the sender address from this email,
 	// It has already been processed and its encrypted.
-	From EncryptedBuffer `json:"from"`
+	From cryptography.EncryptedBuffer `json:"from"`
 	// ToList represents a list of addresses that will receive this email,
 	// It has already been processed and its encrypted.
-	ToList []EncryptedBuffer `json:"to_list"`
+	ToList []cryptography.EncryptedBuffer `json:"to_list"`
 	// To represents which person of the list this copy is attributed to.
 	// For emails sent to multiple people, each one receive one copy.
 	// This field cannot be encrypted because it is a relation.
@@ -121,10 +121,10 @@ type Email struct {
 
 	// Title is the title of the email, cannot be empty,
 	// it is encrypted on the device.
-	Title EncryptedBuffer `json:"title"`
+	Title cryptography.EncryptedBuffer `json:"title"`
 	// Body represents the body of the email,
 	// it is encrypted on the device.
-	Body EncryptedBuffer `json:"body"`
+	Body cryptography.EncryptedBuffer `json:"body"`
 	// BodyLength represents the length of the encrypted body chunk.
 	BodyLength uint32 `json:"body_length"`
 	// Attachments that are already encrypted and hosted inside letter.me.

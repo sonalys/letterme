@@ -2,8 +2,7 @@ package controller
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
+	"crypto"
 	"testing"
 	"time"
 
@@ -15,8 +14,11 @@ import (
 func Test_CreateAccount(t *testing.T) {
 	ctx := context.Background()
 	db := createPersistence(ctx, t)
+	router := cryptography.NewRouter()
+	router.AddRSA_OAEP([]byte("123"), crypto.SHA256.New())
 	svc, err := NewService(ctx, &Dependencies{
-		Persistence: db,
+		Persistence:         db,
+		CryptographicRouter: router,
 	})
 	require.NoError(t, err)
 	col := svc.Persistence.GetCollection("account")
@@ -26,7 +28,7 @@ func Test_CreateAccount(t *testing.T) {
 		require.NoError(t, err, "should clear collection")
 	})
 
-	pk, err := rsa.GenerateKey(rand.Reader, 2048)
+	pk, err := cryptography.NewPrivateKey(2048)
 	require.NoError(t, err, "private key should be created")
 
 	account := models.Account{
@@ -36,23 +38,21 @@ func Test_CreateAccount(t *testing.T) {
 		},
 		OwnershipKey: models.OwnershipKey("123"),
 		TTL:          time.Microsecond,
-		PublicKey:    models.PublicKey(pk.PublicKey),
+		PublicKey:    cryptography.PublicKey(pk.PublicKey),
 		DeviceCount:  8,
 		ID:           "123",
 	}
 
-	var encryptedToken *models.EncryptedBuffer
+	var encryptedToken *cryptography.EncryptedBuffer
 	t.Run("should create account", func(t *testing.T) {
 		encryptedToken, err = svc.CreateAccount(ctx, account)
 		require.NoError(t, err, "should create account")
 		require.NotEmpty(t, encryptedToken, "ownershipToken should not be empty")
 	})
 
-	var buf []byte
-	buf, err = cryptography.Decrypt(pk, encryptedToken.Buffer)
+	decryptedOwnershipKey := models.OwnershipKey("")
+	err = svc.decrypt(pk, encryptedToken, decryptedOwnershipKey)
 	require.NoError(t, err, "ownership_key should be decrypted")
-
-	decryptedOwnershipKey := models.OwnershipKey(string(buf))
 
 	t.Run("dbAccount verification", func(t *testing.T) {
 		var dbAccount models.Account
