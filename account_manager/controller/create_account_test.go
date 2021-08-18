@@ -3,10 +3,10 @@ package controller
 import (
 	"context"
 	"testing"
-	"time"
 
+	"github.com/sonalys/letterme/account_manager/models"
 	"github.com/sonalys/letterme/domain/cryptography"
-	"github.com/sonalys/letterme/domain/models"
+	dModels "github.com/sonalys/letterme/domain/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,23 +33,16 @@ func Test_CreateAccount(t *testing.T) {
 	col := svc.Persistence.GetCollection("account")
 
 	defer t.Run("cleanup", func(t *testing.T) {
-		err := col.Delete(ctx, filter{})
+		_, err := col.Delete(ctx, filter{})
 		require.NoError(t, err, "should clear collection")
 	})
 
 	pk, err := cryptography.NewPrivateKey(2048)
 	require.NoError(t, err, "private key should be created")
 
-	account := models.Account{
-		Addresses: []models.Address{
-			models.Address("alysson@letter.me"),
-			models.Address("alysson_2@letter.me"),
-		},
-		OwnershipKey: models.OwnershipKey("123"),
-		TTL:          time.Microsecond,
-		PublicKey:    cryptography.PublicKey(pk.PublicKey),
-		DeviceCount:  8,
-		ID:           "123",
+	account := models.CreateAccountRequest{
+		Address:   "alysson@letter.me",
+		PublicKey: *pk.GetPublicKey(),
 	}
 
 	var encryptedToken *cryptography.EncryptedBuffer
@@ -59,27 +52,23 @@ func Test_CreateAccount(t *testing.T) {
 		require.NotEmpty(t, encryptedToken, "ownershipToken should not be empty")
 	})
 
-	decryptedOwnershipKey := new(models.OwnershipKey)
+	decryptedOwnershipKey := new(dModels.OwnershipKey)
 	err = svc.decrypt(pk, encryptedToken, decryptedOwnershipKey)
 	require.NoError(t, err, "ownership_key should be decrypted")
 
 	t.Run("dbAccount verification", func(t *testing.T) {
-		var dbAccount models.Account
-		err := col.First(ctx, models.Account{
+		var dbAccount dModels.Account
+		err := col.First(ctx, dModels.Account{
 			OwnershipKey: *decryptedOwnershipKey,
 		}, &dbAccount)
 		require.NoError(t, err, "should create account")
 		require.NotNil(t, dbAccount, "account should return from db")
 
-		require.Equal(t, account.Addresses[:1], dbAccount.Addresses, "dbAccount should have only 1 email")
+		require.Equal(t, []dModels.Address{account.Address}, dbAccount.Addresses, "dbAccount should have only 1 email")
 
 		require.Equal(t, *decryptedOwnershipKey, dbAccount.OwnershipKey, "dbAccount should have same ownership as returned")
-		require.NotEqual(t, account.OwnershipKey, dbAccount.OwnershipKey, "dbAccount should not have user defined ownership")
 
-		require.NotEqual(t, account.TTL, dbAccount.TTL, "dbAccount should not have user defined ttl")
-		require.NotEqual(t, account.DeviceCount, dbAccount.DeviceCount, "dbAccount should not have user defined deviceCount")
-
-		require.NotEqual(t, account.ID, dbAccount.ID, "dbAccount should not have user defined id")
+		require.Equal(t, uint8(1), dbAccount.DeviceCount, "dbAccount should not have user defined deviceCount")
 	})
 
 	t.Run("should not create duplicate account", func(t *testing.T) {

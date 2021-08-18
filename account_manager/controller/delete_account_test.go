@@ -17,7 +17,7 @@ func Test_DeleteAccount(t *testing.T) {
 	require.NoError(t, err)
 	col := svc.Persistence.GetCollection("account")
 	defer t.Run("cleanup", func(t *testing.T) {
-		err := col.Delete(ctx, filter{})
+		_, err := col.Delete(ctx, filter{})
 		require.NoError(t, err, "should clear collection")
 	})
 

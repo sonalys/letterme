@@ -155,20 +155,20 @@ func (c *Collection) Create(ctx context.Context, documents ...interface{}) ([]mo
 
 // Update can update existent documents inside a collection,
 // might return errors if one or more documents are not found.
-func (c *Collection) Update(ctx context.Context, filter, update interface{}) error {
-	_, err := c.Collection.UpdateMany(ctx, filter, update)
+func (c *Collection) Update(ctx context.Context, filter, update interface{}) (int64, error) {
+	res, err := c.Collection.UpdateMany(ctx, filter, update)
 	if err != nil {
-		return newOperationError("updating", newCustomError(err))
+		return 0, newOperationError("updating", newCustomError(err))
 	}
-	return nil
+	return res.MatchedCount, nil
 }
 
 // Delete can remove one or more documents inside a collection,
 // might return errors if one or more documents are not found.
-func (c *Collection) Delete(ctx context.Context, filter interface{}) error {
-	_, err := c.Collection.DeleteMany(ctx, filter)
+func (c *Collection) Delete(ctx context.Context, filter interface{}) (int64, error) {
+	res, err := c.Collection.DeleteMany(ctx, filter)
 	if err != nil {
-		return newOperationError("deleting", newCustomError(err))
+		return 0, newOperationError("deleting", newCustomError(err))
 	}
-	return nil
+	return res.DeletedCount, nil
 }

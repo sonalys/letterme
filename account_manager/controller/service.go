@@ -39,26 +39,6 @@ func NewService(ctx context.Context, d *Dependencies) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) encrypt(k *cryptography.PublicKey, src interface{}) (*cryptography.EncryptedBuffer, error) {
-	if buf, err := s.CryptographicRouter.Encrypt(k, src); err != nil {
-		return nil, err
-	} else {
-		return buf, nil
-	}
-}
-
-func (s *Service) decrypt(k *cryptography.PrivateKey, b *cryptography.EncryptedBuffer, dst interface{}) error {
-	if err := s.CryptographicRouter.Decrypt(k, b, dst); err != nil {
-		return err
-	}
-	return nil
-}
-
-// ResetPublicKey will re-create the publicKey for the given accountID.
-func (s *Service) ResetPublicKey(ctx context.Context, accountID models.DatabaseID) (account *models.Account, err error) {
-	return nil, nil
-}
-
 func (s *Service) AddNewDevice(ctx context.Context, accountID models.DatabaseID) (encryptedPrivateKey *cryptography.EncryptedBuffer, err error) {
 	return nil, nil
 }

@@ -30,7 +30,7 @@ func Test_Mongo(t *testing.T) {
 	require.NoError(t, err, "should create collection")
 	require.NotNil(t, col, "collection instance should exist")
 
-	err = col.Delete(ctx, map[string]interface{}{})
+	_, err = col.Delete(ctx, map[string]interface{}{})
 	require.NoError(t, err, "should clear collection")
 
 	defer func() {
@@ -79,7 +79,7 @@ func Test_Mongo(t *testing.T) {
 	})
 
 	t.Run("should update one document", func(t *testing.T) {
-		err := col.Update(ctx, models.Account{
+		count, err := col.Update(ctx, models.Account{
 			OwnershipKey: models.OwnershipKey("456"),
 		}, map[string]interface{}{
 			"$inc": models.Account{
@@ -87,6 +87,7 @@ func Test_Mongo(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
+		require.Equal(t, int64(1), count, "should update exactly one document")
 		var item models.Account
 		err = col.First(ctx, models.Account{
 			OwnershipKey: models.OwnershipKey("456"),

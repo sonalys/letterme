@@ -5,31 +5,31 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sonalys/letterme/account_manager/models"
 	"github.com/sonalys/letterme/domain/cryptography"
-	"github.com/sonalys/letterme/domain/models"
+	dModels "github.com/sonalys/letterme/domain/models"
 )
 
 // CreateAccount receives a new account model, it should be valid, and it's address should not exist already.
-func (s *Service) CreateAccount(ctx context.Context, account models.Account) (ownershipToken *cryptography.EncryptedBuffer, err error) {
+func (s *Service) CreateAccount(ctx context.Context, account models.CreateAccountRequest) (ownershipToken *cryptography.EncryptedBuffer, err error) {
 	col := s.Persistence.GetCollection("account")
-	address := account.Addresses[0]
-	buf := new(models.Account)
 
 	if err := col.First(ctx, filter{
 		"addresses": filter{
-			"$in": filterList{address},
+			"$in": filterList{account.Address},
 		},
-	}, &buf); err == nil {
-		return nil, newAddressInError(address)
+		// err == nil because it will return errNotFound if email is available
+	}, &dModels.Account{}); err == nil {
+		return nil, newAddressInError(account.Address)
 	}
 
-	dbAccount := models.Account{
+	dbAccount := dModels.Account{
 		// new accounts should have only 1 address assigned to them.
-		Addresses:   account.Addresses[:1],
+		Addresses:   []dModels.Address{account.Address},
 		PublicKey:   account.PublicKey,
 		DeviceCount: 1,
 		// create new ownership for the account.
-		OwnershipKey: models.OwnershipKey(uuid.NewString()),
+		OwnershipKey: dModels.OwnershipKey(uuid.NewString()),
 		// 30 days default TTL for media.
 		TTL: 30 * 24 * time.Hour,
 	}
@@ -38,5 +38,5 @@ func (s *Service) CreateAccount(ctx context.Context, account models.Account) (ow
 		return nil, newAccountOperationError("create", err)
 	}
 
-	return dbAccount.OwnershipKey.EncryptValue(s.CryptographicRouter, cryptography.RSA_OAEP, &account.PublicKey)
+	return dbAccount.OwnershipKey.EncryptValue(s.CryptographicRouter, &account.PublicKey, cryptography.RSA_OAEP)
 }
