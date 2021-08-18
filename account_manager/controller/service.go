@@ -42,10 +42,12 @@ func NewService(ctx context.Context, d *Dependencies) (*Service, error) {
 	}, nil
 }
 
+// AddNewDevice todo.
 func (s *Service) AddNewDevice(ctx context.Context, accountID models.DatabaseID) (encryptedPrivateKey *cryptography.EncryptedBuffer, err error) {
 	return nil, nil
 }
 
-func (s *Service) Authenticate(ctx context.Context, Address models.Address) (encryptedJWT *cryptography.EncryptedBuffer, err error) {
+// Authenticate todo.
+func (s *Service) Authenticate(ctx context.Context, address models.Address) (encryptedJWT *cryptography.EncryptedBuffer, err error) {
 	return nil, nil
 }

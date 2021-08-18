@@ -1,0 +1,64 @@
+linters-settings:
+  gocyclo:
+    min-complexity: 20
+  maligned:
+    suggest-new: true
+  gocritic:
+    color: true
+    shorterErrLocation: true
+    enabled-tags:
+      - performance
+      - style
+      - experimental
+    disabled-checks:
+      - hugeParam
+  gomnd:
+    settings:
+      mnd:
+        ignored-numbers: [100, 0]
+  revive:
+    ignore-generated-header: true
+    severity: warning
+    rules:
+      - name: indent-error-flow
+        severity: info
+
+linters:
+  enable:
+    - revive
+    - megacheck
+    - unconvert
+    - goconst
+    - misspell
+    - unparam
+    - gofmt
+    - goimports
+    - gocyclo
+    - gocritic
+    - govet
+    - unused
+    - prealloc
+    - bodyclose
+    - whitespace # Supports --fix on golangci-tool, that will automatically fix all of the issues reported by this linter
+    - gocognit
+    - gomnd # Only exists in new versions of golangci-lint tool (>=1.24.0)
+
+issues:
+  exclude-use-default: false
+  max-same-issues: 10
+  exclude-rules:
+    - path: mocks.go
+      linters:
+        - gomnd
+    - path: _test # Unused linter does not work correctly with utests in 'check-exported' mode, so they have to be manually excluded
+      linters:
+        - revive
+        - unused
+        - goconst
+        - bodyclose
+    - path: gen\.go # Gonerics generated files should be excluded from being checked by linters
+      linters:
+        - unused
+        - gocritic
+        - gocognit
+        - gosimple

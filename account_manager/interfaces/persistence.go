@@ -7,7 +7,7 @@ import (
 )
 
 // Persistence encapsulates all required functions from a persistence integration.
-// It should work for any choosen database that implements it: mongo, postgres, etc...
+// It should work for any chosen database that implements it: mongo, postgres, etc...
 type Persistence interface {
 	Wait() <-chan bool
 	CreateCollection(colName string, indexes []map[string]interface{}) (Collection, error)

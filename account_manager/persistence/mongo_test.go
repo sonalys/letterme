@@ -12,7 +12,7 @@ import (
 func Test_Mongo(t *testing.T) {
 	ctx := context.Background()
 	var cfg Configuration
-	if err := utils.LoadFromEnv(MONGO_ENV, &cfg); err != nil {
+	if err := utils.LoadFromEnv(MongoEnv, &cfg); err != nil {
 		require.Fail(t, err.Error())
 	}
 

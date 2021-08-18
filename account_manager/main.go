@@ -30,7 +30,7 @@ func main() {
 
 func initializeDependencies(ctx context.Context) *controller.Dependencies {
 	mongoConfig := new(persistence.Configuration)
-	if err := utils.LoadFromEnv(persistence.MONGO_ENV, mongoConfig); err != nil {
+	if err := utils.LoadFromEnv(persistence.MongoEnv, mongoConfig); err != nil {
 		panic("failed to initialize mongoConfig from env")
 	}
 	mongo, err := persistence.NewMongo(ctx, mongoConfig)

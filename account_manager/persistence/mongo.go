@@ -11,8 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// MONGO_ENV is used to get configs from env.
-const MONGO_ENV = "LM_MONGO_SETTINGS"
+// MongoEnv is used to get configs from env.
+const MongoEnv = "LM_MONGO_SETTINGS"
 
 // Mongo is used to interface with persistence definitions.
 type Mongo struct {
@@ -27,6 +27,8 @@ type Configuration struct {
 	DBName      string   `json:"db_name"`
 }
 
+const sleepTimeSeconds = 5
+
 // Wait returns a chan that will return true when db is connected.
 func (m *Mongo) Wait() <-chan bool {
 	c := make(chan bool, 1)
@@ -37,7 +39,7 @@ func (m *Mongo) Wait() <-chan bool {
 			}
 
 			logrus.Infof("failed to connect to mongo: %s", err)
-			time.Sleep(5 * time.Second)
+			time.Sleep(sleepTimeSeconds * time.Second)
 		}
 		c <- true
 	}()
@@ -56,19 +58,22 @@ func NewMongo(ctx context.Context, c *Configuration) (*Mongo, error) {
 		return nil, newInvalidConfigurationError(err)
 	}
 
-	if client, err := mongo.NewClient(opts); err == nil {
-		if err := client.Connect(ctx); err != nil {
-			return nil, newConnectError(err)
-		}
-		return &Mongo{
-			ctx:    ctx,
-			client: client.Database(c.DBName),
-		}, nil
-	} else {
+	client, err := mongo.NewClient(opts)
+	if err != nil {
 		return nil, newInstanceError(err)
 	}
+
+	if err := client.Connect(ctx); err != nil {
+		return nil, newConnectError(err)
+	}
+
+	return &Mongo{
+		ctx:    ctx,
+		client: client.Database(c.DBName),
+	}, nil
 }
 
+// CreateCollection creates a collection in mongo.
 func (m *Mongo) CreateCollection(colName string, indexes []map[string]interface{}) (interfaces.Collection, error) {
 	createOpts := options.Collection()
 	col := m.client.Collection(colName, createOpts)
@@ -81,6 +86,7 @@ func (m *Mongo) CreateCollection(colName string, indexes []map[string]interface{
 	}, nil
 }
 
+// DeleteCollection deletes a collection from mongo.
 func (m *Mongo) DeleteCollection(ctx context.Context, colName string) error {
 	if err := m.client.Collection(colName).Drop(ctx); err != nil {
 		return newCollectionOperationError("delete", colName, err)
@@ -88,6 +94,7 @@ func (m *Mongo) DeleteCollection(ctx context.Context, colName string) error {
 	return nil
 }
 
+// GetCollection returns collection from mongo.
 func (m *Mongo) GetCollection(colName string) interfaces.Collection {
 	createOpts := options.Collection()
 	return &Collection{
@@ -100,7 +107,7 @@ type Collection struct {
 	*mongo.Collection
 }
 
-// Get the first document found, deserialize it inside dst.
+// First Get the first document found, deserialize it inside dst.
 // dst must be a struct otherwise will panic.
 func (c *Collection) First(ctx context.Context, filter, dst interface{}) error {
 	cur := c.Collection.FindOne(ctx, filter)

@@ -12,7 +12,7 @@ import (
 
 func createPersistence(ctx context.Context, t *testing.T) interfaces.Persistence {
 	var cfg persistence.Configuration
-	if err := utils.LoadFromEnv(persistence.MONGO_ENV, &cfg); err != nil {
+	if err := utils.LoadFromEnv(persistence.MongoEnv, &cfg); err != nil {
 		require.Fail(t, err.Error())
 	}
 

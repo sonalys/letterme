@@ -2,17 +2,11 @@ package controller
 
 import "github.com/sonalys/letterme/domain/cryptography"
 
-func (s *Service) encrypt(k *cryptography.PublicKey, src interface{}) (*cryptography.EncryptedBuffer, error) {
-	if buf, err := s.CryptographicRouter.Encrypt(k, src); err != nil {
-		return nil, err
-	} else {
-		return buf, nil
-	}
+// nolint:unused // will be.
+func (s *Service) encrypt(k *cryptography.PublicKey, src interface{}) (buf *cryptography.EncryptedBuffer, err error) {
+	return s.CryptographicRouter.Encrypt(k, src)
 }
 
 func (s *Service) decrypt(k *cryptography.PrivateKey, b *cryptography.EncryptedBuffer, dst interface{}) error {
-	if err := s.CryptographicRouter.Decrypt(k, b, dst); err != nil {
-		return err
-	}
-	return nil
+	return s.CryptographicRouter.Decrypt(k, b, dst)
 }
