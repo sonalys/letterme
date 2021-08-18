@@ -17,6 +17,14 @@ func (r CreateAccountRequest) Validate() error {
 		return newEmptyFieldError("address")
 	}
 
+	if err := r.Address.Validate(); err != nil {
+		return newInvalidFieldError("address", err)
+	}
+
+	if r.Address.Domain() != "letter.me" {
+		return newInvalidFieldError("address", newExternalAddressErr(r.Address))
+	}
+
 	if r.PublicKey.IsZero() {
 		return newEmptyFieldError("public_key")
 	}

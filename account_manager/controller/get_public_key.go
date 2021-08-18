@@ -17,9 +17,7 @@ func (s *Service) GetPublicKey(ctx context.Context, address models.Address) (pub
 	col := s.Persistence.GetCollection(accountCollection)
 	account := new(models.Account)
 	if err := col.First(ctx, filter{
-		"addresses": filter{
-			"$in": address,
-		},
+		"addresses": address,
 	}, account); err != nil {
 		return nil, newAccountOperationError("get", err)
 	}

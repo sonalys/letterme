@@ -3,8 +3,10 @@ package models
 import (
 	"errors"
 	"regexp"
+	"strings"
 )
 
+// Address is used to reference all email addresses in letter.me.
 type Address string
 
 var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
@@ -21,4 +23,15 @@ func (m Address) Validate() error {
 		return newInvalidTypeError("address", string(m), errors.New("value is not an email"))
 	}
 	return nil
+}
+
+// Domain is used to get the email domain.
+//
+// Example:
+//	"alysson@letter.me" => "letter.me"
+func (m Address) Domain() string {
+	if buf := strings.Split(string(m), "@"); len(buf) == 2 {
+		return buf[1]
+	}
+	return ""
 }

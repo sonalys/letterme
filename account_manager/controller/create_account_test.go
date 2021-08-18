@@ -17,7 +17,7 @@ func Test_CreateAccount(t *testing.T) {
 	router, err := cryptography.NewRouter(&cryptography.Configuration{
 		DefaultAlgorithm: cryptography.RSA_OAEP,
 		Configs: map[cryptography.AlgorithmName]cryptography.AlgorithmConfiguration{
-			cryptography.RSA_OAEP: cryptography.AlgorithmConfiguration{
+			cryptography.RSA_OAEP: {
 				Cypher: []byte("123"),
 				Hash:   "sha-256",
 			},
@@ -72,6 +72,20 @@ func Test_CreateAccount(t *testing.T) {
 	})
 
 	t.Run("should not create duplicate account", func(t *testing.T) {
+		token, err := svc.CreateAccount(ctx, account)
+		require.Error(t, err, "should not create account")
+		require.Empty(t, token, "ownershipToken should be empty")
+	})
+
+	t.Run("should not create invalid email", func(t *testing.T) {
+		account.Address = dModels.Address("alysson¨@letter.me")
+		token, err := svc.CreateAccount(ctx, account)
+		require.Error(t, err, "should not create account")
+		require.Empty(t, token, "ownershipToken should be empty")
+	})
+
+	t.Run("should not create email from other domains", func(t *testing.T) {
+		account.Address = dModels.Address("alysson@gmail.com")
 		token, err := svc.CreateAccount(ctx, account)
 		require.Error(t, err, "should not create account")
 		require.Empty(t, token, "ownershipToken should be empty")
