@@ -31,29 +31,23 @@ type InternalEmailRequest struct {
 }
 
 // Encrypt implements encryptable interface.
-func (m *InternalEmailRequest) Encrypt(k *cryptography.PublicKey) error {
-	// if buf, err := cryptography.Encrypt(k.Get(), []byte(m.From)); err == nil {
-	// 	m.Email.From = cryptography.EncryptedBuffer{
-	// 		Buffer:    buf,
-	// 		Algorithm: RSA_OAEP,
-	// 	}
-	// } else {
-	// 	return newEncryptionError(m, err)
-	// }
+func (m *InternalEmailRequest) Encrypt(r cryptography.CryptographicRouter, algorithm cryptography.AlgorithmName, k *cryptography.PublicKey) error {
+	if buf, err := r.Encrypt(k, algorithm, m.From); err == nil {
+		m.Email.From = *buf
+	} else {
+		return newEncryptionError(m, err)
+	}
 
-	// for i := range m.ToList {
-	// 	if buf, err := cryptography.Encrypt(k.Get(), []byte(m.ToList[i])); err == nil {
-	// 		m.Email.ToList = append(m.Email.ToList, EncryptedBuffer{
-	// 			Buffer:    buf,
-	// 			Algorithm: RSA_OAEP,
-	// 		})
-	// 	} else {
-	// 		return newEncryptionError(m, err)
-	// 	}
-	// }
+	for i := range m.ToList {
+		if buf, err := r.Encrypt(k, algorithm, m.ToList[i]); err == nil {
+			m.Email.ToList = append(m.Email.ToList, *buf)
+		} else {
+			return newEncryptionError(m, err)
+		}
+	}
 
 	for i := range m.Attachments {
-		if err := m.Attachments[i].Encrypt(k); err == nil {
+		if err := m.Attachments[i].Encrypt(r, algorithm, k); err == nil {
 			m.Email.Attachments = append(m.Email.Attachments, m.Attachments[i].Attachment)
 		} else {
 			return newEncryptionError(m, err)

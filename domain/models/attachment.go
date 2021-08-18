@@ -15,16 +15,12 @@ type AttachmentRequest struct {
 }
 
 // Encrypt implements encryptable interface.
-func (m AttachmentRequest) Encrypt(k *cryptography.PublicKey) error {
-	// if buf, err := cryptography.Encrypt(k.Get(), []byte(m.URL)); err == nil {
-	// 	m.Attachment.URL = cryptography.EncryptedBuffer{
-	// 		Buffer:    buf,
-	// 		Algorithm: cryptography.RSA_OAEP,
-	// 	}
-	// } else {
-	// 	return newEncryptionError(m, err)
-	// }
-
+func (m AttachmentRequest) Encrypt(r cryptography.CryptographicRouter, algorithm cryptography.AlgorithmName, k *cryptography.PublicKey) error {
+	if buf, err := r.Encrypt(k, algorithm, m.URL); err == nil {
+		m.Attachment.URL = *buf
+	} else {
+		return newEncryptionError(m, err)
+	}
 	return nil
 }
 

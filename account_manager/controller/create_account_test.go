@@ -50,21 +50,21 @@ func Test_CreateAccount(t *testing.T) {
 		require.NotEmpty(t, encryptedToken, "ownershipToken should not be empty")
 	})
 
-	decryptedOwnershipKey := models.OwnershipKey("")
+	decryptedOwnershipKey := new(models.OwnershipKey)
 	err = svc.decrypt(pk, encryptedToken, decryptedOwnershipKey)
 	require.NoError(t, err, "ownership_key should be decrypted")
 
 	t.Run("dbAccount verification", func(t *testing.T) {
 		var dbAccount models.Account
 		err := col.First(ctx, models.Account{
-			OwnershipKey: decryptedOwnershipKey,
+			OwnershipKey: *decryptedOwnershipKey,
 		}, &dbAccount)
 		require.NoError(t, err, "should create account")
 		require.NotNil(t, dbAccount, "account should return from db")
 
 		require.Equal(t, account.Addresses[:1], dbAccount.Addresses, "dbAccount should have only 1 email")
 
-		require.Equal(t, decryptedOwnershipKey, dbAccount.OwnershipKey, "dbAccount should have same ownership as returned")
+		require.Equal(t, *decryptedOwnershipKey, dbAccount.OwnershipKey, "dbAccount should have same ownership as returned")
 		require.NotEqual(t, account.OwnershipKey, dbAccount.OwnershipKey, "dbAccount should not have user defined ownership")
 
 		require.NotEqual(t, account.TTL, dbAccount.TTL, "dbAccount should not have user defined ttl")
