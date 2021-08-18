@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/sha256"
 	"os"
 	"os/signal"
 
@@ -31,19 +30,23 @@ func main() {
 
 func initializeDependencies(ctx context.Context) *controller.Dependencies {
 	mongoConfig := new(persistence.Configuration)
-	utils.LoadFromEnv(persistence.MONGO_ENV, mongoConfig)
+	if err := utils.LoadFromEnv(persistence.MONGO_ENV, mongoConfig); err != nil {
+		panic("failed to initialize mongoConfig from env")
+	}
 	mongo, err := persistence.NewMongo(ctx, mongoConfig)
 	if err != nil {
 		panic(err)
 	}
 
-	router := cryptography.NewRouter()
-	if cypher, ok := os.LookupEnv(cryptography.CRYPTO_CYPHER_ENV); ok {
-		router.AddRSA_OAEP([]byte(cypher), sha256.New())
-	} else {
-		panic("cypher is not set")
+	cryptographicConfig := new(cryptography.Configuration)
+	if err := utils.LoadFromEnv(cryptography.CRYPTO_CYPHER_ENV, cryptographicConfig); err != nil {
+		panic("failed to initialize cryptographicConfig from env")
 	}
 
+	router, err := cryptography.NewRouter(cryptographicConfig)
+	if err != nil {
+		panic(err)
+	}
 	return &controller.Dependencies{
 		Persistence:         mongo,
 		CryptographicRouter: router,

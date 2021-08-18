@@ -40,7 +40,7 @@ func NewService(ctx context.Context, d *Dependencies) (*Service, error) {
 }
 
 func (s *Service) encrypt(k *cryptography.PublicKey, src interface{}) (*cryptography.EncryptedBuffer, error) {
-	if buf, err := s.CryptographicRouter.Encrypt(k, cryptography.RSA_OAEP, src); err != nil {
+	if buf, err := s.CryptographicRouter.Encrypt(k, src); err != nil {
 		return nil, err
 	} else {
 		return buf, nil

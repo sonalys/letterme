@@ -7,8 +7,6 @@ import (
 	"hash"
 )
 
-const CRYPTO_CYPHER_ENV = "LM_CRYPTO_CYPHER"
-
 // PublicKey is a type encapsulation of the public key.
 type PublicKey rsa.PublicKey
 

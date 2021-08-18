@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"crypto"
 	"testing"
 	"time"
 
@@ -14,8 +13,18 @@ import (
 func Test_CreateAccount(t *testing.T) {
 	ctx := context.Background()
 	db := createPersistence(ctx, t)
-	router := cryptography.NewRouter()
-	router.AddRSA_OAEP([]byte("123"), crypto.SHA256.New())
+
+	router, err := cryptography.NewRouter(&cryptography.Configuration{
+		DefaultAlgorithm: cryptography.RSA_OAEP,
+		Configs: map[cryptography.AlgorithmName]cryptography.AlgorithmConfiguration{
+			cryptography.RSA_OAEP: cryptography.AlgorithmConfiguration{
+				Cypher: []byte("123"),
+				Hash:   "sha-256",
+			},
+		},
+	})
+	require.NoError(t, err)
+
 	svc, err := NewService(ctx, &Dependencies{
 		Persistence:         db,
 		CryptographicRouter: router,
