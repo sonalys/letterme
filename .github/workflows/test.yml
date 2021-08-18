@@ -8,6 +8,8 @@ jobs:
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
     - name: golang
       uses: actions/setup-go@v2
       with:
@@ -16,13 +18,11 @@ jobs:
       uses: golangci/golangci-lint-action@v2
       with:
         version: v1.42
-        working-directory: ./account_manager
+        working-directory: account_manager
     - name: mongoDB
       uses: supercharge/mongodb-github-action@1.6.0
       with:
         mongodb-port: 2564
         mongodb-version: '5.0'
-    - name: Checkout code
-      uses: actions/checkout@v2
     - name: run
       run: cd account_manager && make ci
