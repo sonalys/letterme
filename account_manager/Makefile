@@ -17,7 +17,6 @@ coverage:
 	go tool cover -func coverage.out
 
 ci:
-	make lint
 	make test
 	make coverage
 
