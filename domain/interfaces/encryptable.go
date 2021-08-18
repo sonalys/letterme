@@ -3,9 +3,9 @@ package interfaces
 import "github.com/sonalys/letterme/domain/cryptography"
 
 type Encryptable interface {
-	Encrypt(r cryptography.CryptographicRouter, algorithm cryptography.AlgorithmName, k *cryptography.PublicKey) error
+	Encrypt(r cryptography.CryptographicRouter, k *cryptography.PublicKey, algorithm cryptography.AlgorithmName) error
 }
 
 type EncryptableValue interface {
-	Encrypt(r cryptography.CryptographicRouter, algorithm cryptography.AlgorithmName, k *cryptography.PublicKey) (*cryptography.EncryptedBuffer, error)
+	Encrypt(r cryptography.CryptographicRouter, k *cryptography.PublicKey, algorithm cryptography.AlgorithmName) (*cryptography.EncryptedBuffer, error)
 }

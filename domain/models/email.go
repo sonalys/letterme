@@ -31,15 +31,15 @@ type InternalEmailRequest struct {
 }
 
 // Encrypt implements encryptable interface.
-func (m *InternalEmailRequest) Encrypt(r cryptography.CryptographicRouter, algorithm cryptography.AlgorithmName, k *cryptography.PublicKey) error {
-	if buf, err := r.Encrypt(k, algorithm, m.From); err == nil {
+func (m *InternalEmailRequest) Encrypt(r cryptography.CryptographicRouter, k *cryptography.PublicKey, algorithm cryptography.AlgorithmName) error {
+	if buf, err := r.EncryptAlgorithm(k, m.From, algorithm); err == nil {
 		m.Email.From = *buf
 	} else {
 		return newEncryptionError(m, err)
 	}
 
 	for i := range m.ToList {
-		if buf, err := r.Encrypt(k, algorithm, m.ToList[i]); err == nil {
+		if buf, err := r.EncryptAlgorithm(k, m.ToList[i], algorithm); err == nil {
 			m.Email.ToList = append(m.Email.ToList, *buf)
 		} else {
 			return newEncryptionError(m, err)

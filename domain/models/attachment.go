@@ -16,7 +16,7 @@ type AttachmentRequest struct {
 
 // Encrypt implements encryptable interface.
 func (m AttachmentRequest) Encrypt(r cryptography.CryptographicRouter, algorithm cryptography.AlgorithmName, k *cryptography.PublicKey) error {
-	if buf, err := r.Encrypt(k, algorithm, m.URL); err == nil {
+	if buf, err := r.EncryptAlgorithm(k, m.URL, algorithm); err == nil {
 		m.Attachment.URL = *buf
 	} else {
 		return newEncryptionError(m, err)
