@@ -12,6 +12,9 @@ import (
 type filter map[string]interface{}
 type filterList []interface{}
 
+// TODO: maybe put this inside domain.
+const accountCollection = "account"
+
 // Service represents the api logic controller,
 // It uses of decoupled dependencies to execute business logic for specific cases.
 // Examples:

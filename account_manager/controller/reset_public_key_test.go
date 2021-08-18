@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sonalys/letterme/account_manager/models"
 	"github.com/sonalys/letterme/domain/cryptography"
-	"github.com/sonalys/letterme/domain/models"
+	dModels "github.com/sonalys/letterme/domain/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,11 +26,11 @@ func Test_ResetPublicKey(t *testing.T) {
 	oldKey, err := cryptography.NewPrivateKey(2048)
 	require.NoError(t, err, "should create old private key")
 
-	account := models.Account{
-		OwnershipKey: models.OwnershipKey("123"),
-		Addresses: []models.Address{
-			models.Address("alysson@letter.me"),
-			models.Address("alysson_2@letter.me"),
+	account := dModels.Account{
+		OwnershipKey: dModels.OwnershipKey("123"),
+		Addresses: []dModels.Address{
+			dModels.Address("alysson@letter.me"),
+			dModels.Address("alysson_2@letter.me"),
 		},
 		PublicKey: *oldKey.GetPublicKey(),
 	}
@@ -42,10 +43,13 @@ func Test_ResetPublicKey(t *testing.T) {
 
 	newPublicKey := newKey.GetPublicKey()
 
-	err = svc.ResetPublicKey(ctx, account.OwnershipKey, *newPublicKey)
+	err = svc.ResetPublicKey(ctx, models.ResetPublicKeyRequest{
+		OwnershipKey: account.OwnershipKey,
+		PublicKey:    *newPublicKey,
+	})
 	require.NoError(t, err, "should change public key")
 
-	dbAccount := new(models.Account)
+	dbAccount := new(dModels.Account)
 	err = col.First(ctx, filter{}, &dbAccount)
 	require.NoError(t, err, "should find account")
 

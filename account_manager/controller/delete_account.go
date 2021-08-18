@@ -7,10 +7,14 @@ import (
 )
 
 // DeleteAccount delete the account for the given ownershipToken.
-func (s *Service) DeleteAccount(ctx context.Context, ownershipToken models.OwnershipKey) (err error) {
-	col := s.Persistence.GetCollection("account")
+func (s *Service) DeleteAccount(ctx context.Context, ownershipKey models.OwnershipKey) (err error) {
+	if ownershipKey == "" {
+		return newInvalidRequestError(newEmptyParamError("ownership_key"))
+	}
+
+	col := s.Persistence.GetCollection(accountCollection)
 	if _, err := col.Delete(ctx, models.Account{
-		OwnershipKey: ownershipToken,
+		OwnershipKey: ownershipKey,
 	}); err != nil {
 		return newAccountOperationError("delete", err)
 	}

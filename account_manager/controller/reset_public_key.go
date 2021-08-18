@@ -4,19 +4,23 @@ import (
 	"context"
 
 	"github.com/sirupsen/logrus"
-	"github.com/sonalys/letterme/domain/cryptography"
-	"github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/account_manager/models"
+	dModels "github.com/sonalys/letterme/domain/models"
 )
 
 // ResetPublicKey will re-create the publicKey for the given accountID.
-func (s *Service) ResetPublicKey(ctx context.Context, ownershipKey models.OwnershipKey, publicKey cryptography.PublicKey) error {
-	col := s.Persistence.GetCollection("account")
-	queryFilter := models.Account{
-		OwnershipKey: ownershipKey,
+func (s *Service) ResetPublicKey(ctx context.Context, req models.ResetPublicKeyRequest) error {
+	if err := req.Validate(); err != nil {
+		return newInvalidRequestError(err)
+	}
+
+	col := s.Persistence.GetCollection(accountCollection)
+	queryFilter := dModels.Account{
+		OwnershipKey: req.OwnershipKey,
 	}
 	updateFilter := filter{
-		"$set": models.Account{
-			PublicKey: publicKey,
+		"$set": dModels.Account{
+			PublicKey: req.PublicKey,
 		},
 	}
 	if count, err := col.Update(ctx, queryFilter, updateFilter); err != nil {

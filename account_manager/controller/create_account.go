@@ -12,7 +12,11 @@ import (
 
 // CreateAccount receives a new account model, it should be valid, and it's address should not exist already.
 func (s *Service) CreateAccount(ctx context.Context, account models.CreateAccountRequest) (ownershipToken *cryptography.EncryptedBuffer, err error) {
-	col := s.Persistence.GetCollection("account")
+	if err := account.Validate(); err != nil {
+		return nil, newInvalidRequestError(err)
+	}
+
+	col := s.Persistence.GetCollection(accountCollection)
 
 	if err := col.First(ctx, filter{
 		"addresses": filter{
