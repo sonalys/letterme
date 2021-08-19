@@ -6,12 +6,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sonalys/letterme/account_manager/models"
-	"github.com/sonalys/letterme/domain/cryptography"
-	dModels "github.com/sonalys/letterme/domain/models"
+	dModels "github.com/sonalys/letterme/domain"
 )
 
 // CreateAccount receives a new account model, it should be valid, and it's address should not exist already.
-func (s *Service) CreateAccount(ctx context.Context, account models.CreateAccountRequest) (ownershipToken *cryptography.EncryptedBuffer, err error) {
+func (s *Service) CreateAccount(ctx context.Context, account models.CreateAccountRequest) (ownershipToken *dModels.EncryptedBuffer, err error) {
 	if err := account.Validate(); err != nil {
 		return nil, newInvalidRequestError(err)
 	}
@@ -42,5 +41,5 @@ func (s *Service) CreateAccount(ctx context.Context, account models.CreateAccoun
 		return nil, newAccountOperationError("create", err)
 	}
 
-	return dbAccount.OwnershipKey.EncryptValue(s.CryptographicRouter, &account.PublicKey, cryptography.RSA_OAEP)
+	return dbAccount.OwnershipKey.EncryptValue(s.CryptographicRouter, &account.PublicKey, dModels.RSA_OAEP)
 }

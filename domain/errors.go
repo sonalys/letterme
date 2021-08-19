@@ -1,4 +1,4 @@
-package models
+package domain
 
 import (
 	"fmt"
@@ -22,7 +22,13 @@ const (
 
 	encryptionError = "failed to encrypt %T"
 	decryptionError = "failed to decrypt %T"
+
+	errOperationJWT = "failed to %s jwt"
 )
+
+func newOperationJWTError(op string, err error) error {
+	return errors.Wrap(err, fmt.Sprintf(errOperationJWT, op))
+}
 
 func newEncryptionError(obj interface{}, err error) error {
 	return errors.Wrap(err, fmt.Sprintf(encryptionError, obj))

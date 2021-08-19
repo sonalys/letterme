@@ -5,7 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/sonalys/letterme/account_manager/models"
-	dModels "github.com/sonalys/letterme/domain/models"
+	dModels "github.com/sonalys/letterme/domain"
 )
 
 // ResetPublicKey will re-create the publicKey for the given accountID.

@@ -6,7 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/sonalys/letterme/account_manager/interfaces"
-	"github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/domain"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -146,7 +146,7 @@ func (c *Collection) List(ctx context.Context, filter, dst interface{}) error {
 
 // Create can create one or multiple documents inside a collection,
 // might get errors from invalid conversion, or empty documents list.
-func (c *Collection) Create(ctx context.Context, documents ...interface{}) ([]models.DatabaseID, error) {
+func (c *Collection) Create(ctx context.Context, documents ...interface{}) ([]domain.DatabaseID, error) {
 	cur, err := c.Collection.InsertMany(ctx, documents)
 	if err != nil {
 		return nil, newOperationError("creating", newCustomError(err))

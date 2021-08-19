@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/domain"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,11 +21,11 @@ func Test_GetAccount(t *testing.T) {
 		require.NoError(t, err, "should clear collection")
 	})
 
-	account := models.Account{
+	account := domain.Account{
 		OwnershipKey: "123",
-		Addresses: []models.Address{
-			models.Address("alysson@letter.me"),
-			models.Address("alysson_2@letter.me"),
+		Addresses: []domain.Address{
+			domain.Address("alysson@letter.me"),
+			domain.Address("alysson_2@letter.me"),
 		},
 	}
 

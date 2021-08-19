@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/sonalys/letterme/account_manager/interfaces"
-	"github.com/sonalys/letterme/domain/cryptography"
-	"github.com/sonalys/letterme/domain/models"
+
+	"github.com/sonalys/letterme/domain"
 )
 
 // Alias for db filters.
@@ -29,7 +29,8 @@ type Service struct {
 // Dependencies are the integrations required to initialize the service.
 type Dependencies struct {
 	interfaces.Persistence
-	cryptography.CryptographicRouter
+	domain.CryptographicRouter
+	domain.Authenticator
 }
 
 // NewService initializes the api controller
@@ -43,11 +44,6 @@ func NewService(ctx context.Context, d *Dependencies) (*Service, error) {
 }
 
 // AddNewDevice todo.
-func (s *Service) AddNewDevice(ctx context.Context, accountID models.DatabaseID) (encryptedPrivateKey *cryptography.EncryptedBuffer, err error) {
-	return nil, nil
-}
-
-// Authenticate todo.
-func (s *Service) Authenticate(ctx context.Context, address models.Address) (encryptedJWT *cryptography.EncryptedBuffer, err error) {
+func (s *Service) AddNewDevice(ctx context.Context, accountID domain.DatabaseID) (encryptedPrivateKey *domain.EncryptedBuffer, err error) {
 	return nil, nil
 }

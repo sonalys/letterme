@@ -4,8 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sonalys/letterme/domain/cryptography"
-	"github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/domain"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,17 +21,17 @@ func Test_GetPublicKey(t *testing.T) {
 		require.NoError(t, err, "should clear collection")
 	})
 
-	email := models.Address("alysson@letter.me")
-	privateKey, err := cryptography.NewPrivateKey(2048)
+	email := domain.Address("alysson@letter.me")
+	privateKey, err := domain.NewPrivateKey(2048)
 	require.NoError(t, err)
 
 	publicKey := privateKey.GetPublicKey()
-	account := models.Account{
+	account := domain.Account{
 		OwnershipKey: "123",
 		PublicKey:    *publicKey,
-		Addresses: []models.Address{
+		Addresses: []domain.Address{
 			email,
-			models.Address("alysson_2@letter.me"),
+			domain.Address("alysson_2@letter.me"),
 		},
 	}
 
@@ -40,7 +39,7 @@ func Test_GetPublicKey(t *testing.T) {
 		_, err := col.Create(ctx, account)
 		require.NoError(t, err, "should create account")
 
-		account.Addresses = []models.Address{"priscila@gmail.com"}
+		account.Addresses = []domain.Address{"priscila@gmail.com"}
 		_, err = col.Create(ctx, account)
 		require.NoError(t, err, "should create dummy account")
 	})

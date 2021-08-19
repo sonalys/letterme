@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/sonalys/letterme/account_manager/utils"
-	"github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/domain"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,8 +40,8 @@ func Test_Mongo(t *testing.T) {
 
 	// Test
 	t.Run("should create one document", func(t *testing.T) {
-		doc := models.Account{
-			OwnershipKey: models.OwnershipKey("123"),
+		doc := domain.Account{
+			OwnershipKey: domain.OwnershipKey("123"),
 		}
 
 		ids, err := col.Create(ctx, doc)
@@ -50,9 +50,9 @@ func Test_Mongo(t *testing.T) {
 	})
 
 	t.Run("should create multiple documents", func(t *testing.T) {
-		docs := []models.Account{
-			{OwnershipKey: models.OwnershipKey("123")},
-			{OwnershipKey: models.OwnershipKey("456")},
+		docs := []domain.Account{
+			{OwnershipKey: domain.OwnershipKey("123")},
+			{OwnershipKey: domain.OwnershipKey("456")},
 		}
 
 		ids, err := col.Create(ctx, docs[0], docs[1])
@@ -61,40 +61,40 @@ func Test_Mongo(t *testing.T) {
 	})
 
 	t.Run("should get first document", func(t *testing.T) {
-		var item models.Account
-		err := col.First(ctx, models.Account{
-			OwnershipKey: models.OwnershipKey("456"),
+		var item domain.Account
+		err := col.First(ctx, domain.Account{
+			OwnershipKey: domain.OwnershipKey("456"),
 		}, &item)
 		require.NoError(t, err)
-		require.Equal(t, models.OwnershipKey("456"), item.OwnershipKey)
+		require.Equal(t, domain.OwnershipKey("456"), item.OwnershipKey)
 	})
 
 	t.Run("should get list two document", func(t *testing.T) {
-		var items []models.Account
-		err := col.List(ctx, models.Account{
-			OwnershipKey: models.OwnershipKey("123"),
+		var items []domain.Account
+		err := col.List(ctx, domain.Account{
+			OwnershipKey: domain.OwnershipKey("123"),
 		}, &items)
 		require.NoError(t, err)
 		require.Len(t, items, 2, "should return 2 items")
 	})
 
 	t.Run("should update one document", func(t *testing.T) {
-		count, err := col.Update(ctx, models.Account{
-			OwnershipKey: models.OwnershipKey("456"),
+		count, err := col.Update(ctx, domain.Account{
+			OwnershipKey: domain.OwnershipKey("456"),
 		}, map[string]interface{}{
-			"$inc": models.Account{
+			"$inc": domain.Account{
 				DeviceCount: 2,
 			},
 		})
 		require.NoError(t, err)
 		require.Equal(t, int64(1), count, "should update exactly one document")
-		var item models.Account
-		err = col.First(ctx, models.Account{
-			OwnershipKey: models.OwnershipKey("456"),
+		var item domain.Account
+		err = col.First(ctx, domain.Account{
+			OwnershipKey: domain.OwnershipKey("456"),
 		}, &item)
 		require.NoError(t, err)
 		require.Equal(t, uint8(2), item.DeviceCount)
-		require.Equal(t, models.OwnershipKey("456"), item.OwnershipKey)
+		require.Equal(t, domain.OwnershipKey("456"), item.OwnershipKey)
 		require.NotEmpty(t, item.ID)
 	})
 }

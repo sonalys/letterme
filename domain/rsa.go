@@ -1,8 +1,9 @@
-package cryptography
+package domain
 
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"hash"
@@ -14,10 +15,25 @@ import (
 // PublicKey is a type encapsulation of the public key.
 type PublicKey rsa.PublicKey
 
+// MarshalJSON implements JSON marshaling interface.
+func (k PublicKey) MarshalJSON() ([]byte, error) {
+	return x509.MarshalPKCS1PublicKey(k.Get()), nil
+}
+
+// UnmarshalJSON implements JSON unmarshaling interface.
+func (k *PublicKey) UnmarshalJSON(data []byte) error {
+	privateKey, err := x509.ParsePKCS1PublicKey(data)
+	if err != nil {
+		return err
+	}
+	*k = PublicKey(*privateKey)
+	return nil
+}
+
 // MarshalBSONValue implements BSON marshaling interface.
 // PublicKey needs custom encoding because bson doesn't know how to do it.
 func (s PublicKey) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	bytes, err := json.Marshal(s)
+	bytes, err := s.MarshalJSON()
 	if err != nil {
 		return bson.TypeBinary, nil, err
 	}
@@ -37,7 +53,7 @@ func (s *PublicKey) UnmarshalBSONValue(dataType bsontype.Type, data []byte) erro
 	}
 
 	var pk PublicKey
-	if err := json.Unmarshal([]byte(buf), &pk); err != nil {
+	if err := pk.UnmarshalJSON(buf); err != nil {
 		return fmt.Errorf("failed decode object publicKey from %v", dataType)
 	}
 
@@ -58,6 +74,21 @@ func (k PublicKey) Get() *rsa.PublicKey {
 
 // PrivateKey is a type encapsulation of the private key.
 type PrivateKey rsa.PrivateKey
+
+// MarshalJSON implements JSON marshaling interface.
+func (k PrivateKey) MarshalJSON() ([]byte, error) {
+	return x509.MarshalPKCS1PrivateKey(k.Get()), nil
+}
+
+// UnmarshalJSON implements JSON unmarshaling interface.
+func (k *PrivateKey) UnmarshalJSON(data []byte) error {
+	privateKey, err := x509.ParsePKCS1PrivateKey(data)
+	if err != nil {
+		return err
+	}
+	*k = PrivateKey(*privateKey)
+	return nil
+}
 
 // GetPublicKey returns a copy of the encapsulated rsa.PublicKey
 func (k PrivateKey) GetPublicKey() *PublicKey {
@@ -89,12 +120,26 @@ type rsa_oaep struct {
 // Decrypt uses RSA-OAEP decryption algorithm using sha-512 hash.
 // We will use this for authencity checks, we don't decrypt any user content ever.
 func (r rsa_oaep) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) error {
-	buf, err := rsa.DecryptOAEP(r.hash, rand.Reader, k.Get(), b.Buffer, r.cypher)
-	if err != nil {
-		return err
+	msgLen := len(b.Buffer)
+	step := k.PublicKey.Size()
+	encryptedBytes := b.Buffer
+	var decryptedBytes []byte
+
+	for startOffset := 0; startOffset < msgLen; startOffset += step {
+		endOffset := startOffset + step
+		if endOffset > msgLen {
+			endOffset = msgLen
+		}
+
+		decryptedBlockBytes, err := rsa.DecryptOAEP(r.hash, rand.Reader, k.Get(), encryptedBytes[startOffset:endOffset], r.cypher)
+		if err != nil {
+			return err
+		}
+
+		decryptedBytes = append(decryptedBytes, decryptedBlockBytes...)
 	}
 
-	return json.Unmarshal(buf, dst)
+	return json.Unmarshal(decryptedBytes, dst)
 }
 
 // Encrypt uses RSA-OAEP encryption algorithm using sha-512 hash.
@@ -104,13 +149,27 @@ func (r rsa_oaep) Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, erro
 		return nil, err
 	}
 
-	encryptedBuf, err := rsa.EncryptOAEP(r.hash, rand.Reader, k.Get(), bytes, r.cypher)
-	if err != nil {
-		return nil, err
+	publicKey := k.Get()
+	msgLen := len(bytes)
+	step := publicKey.Size() - 2*r.hash.Size() - 2
+	var encryptedBytes []byte
+
+	for startOffset := 0; startOffset < msgLen; startOffset += step {
+		endOffset := startOffset + step
+		if endOffset > msgLen {
+			endOffset = msgLen
+		}
+
+		encryptedBlockBytes, err := rsa.EncryptOAEP(r.hash, rand.Reader, k.Get(), bytes[startOffset:endOffset], r.cypher)
+		if err != nil {
+			return nil, err
+		}
+
+		encryptedBytes = append(encryptedBytes, encryptedBlockBytes...)
 	}
 
 	return &EncryptedBuffer{
-		Buffer:    encryptedBuf,
+		Buffer:    encryptedBytes,
 		Algorithm: RSA_OAEP,
 		Hash:      sha256,
 	}, nil

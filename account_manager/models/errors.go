@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/domain"
 )
 
 const (
@@ -21,6 +21,6 @@ func newInvalidFieldError(fieldName string, err error) error {
 	return errors.Wrap(err, fmt.Sprintf(errInvalidField, fieldName))
 }
 
-func newExternalAddressErr(address models.Address) error {
+func newExternalAddressErr(address domain.Address) error {
 	return fmt.Errorf(errExternalAddress, address)
 }

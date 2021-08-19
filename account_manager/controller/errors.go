@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/domain"
 )
 
 const (
@@ -14,7 +14,7 @@ const (
 	errEmptyParam       = "parameter '%s' cannot be empty"
 )
 
-func newAddressInError(address models.Address) error {
+func newAddressInError(address domain.Address) error {
 	return fmt.Errorf(errAddressInUse, address)
 }
 

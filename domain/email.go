@@ -1,10 +1,8 @@
-package models
+package domain
 
 import (
 	"fmt"
 	"time"
-
-	"github.com/sonalys/letterme/domain/cryptography"
 )
 
 // UnencryptedEmail is used to receive/send emails from/to outside letter.me,
@@ -31,7 +29,7 @@ type InternalEmailRequest struct {
 }
 
 // Encrypt implements encryptable interface.
-func (m *InternalEmailRequest) Encrypt(r cryptography.CryptographicRouter, k *cryptography.PublicKey, algorithm cryptography.AlgorithmName) error {
+func (m *InternalEmailRequest) Encrypt(r CryptographicRouter, k *PublicKey, algorithm AlgorithmName) error {
 	if buf, err := r.EncryptAlgorithm(k, m.From, algorithm); err == nil {
 		m.Email.From = *buf
 	} else {
@@ -102,10 +100,10 @@ type Email struct {
 
 	// From represents the sender address from this email,
 	// It has already been processed and its encrypted.
-	From cryptography.EncryptedBuffer `json:"from"`
+	From EncryptedBuffer `json:"from"`
 	// ToList represents a list of addresses that will receive this email,
 	// It has already been processed and its encrypted.
-	ToList []cryptography.EncryptedBuffer `json:"to_list"`
+	ToList []EncryptedBuffer `json:"to_list"`
 	// To represents which person of the list this copy is attributed to.
 	// For emails sent to multiple people, each one receive one copy.
 	// This field cannot be encrypted because it is a relation.
@@ -115,10 +113,10 @@ type Email struct {
 
 	// Title is the title of the email, cannot be empty,
 	// it is encrypted on the device.
-	Title cryptography.EncryptedBuffer `json:"title"`
+	Title EncryptedBuffer `json:"title"`
 	// Body represents the body of the email,
 	// it is encrypted on the device.
-	Body cryptography.EncryptedBuffer `json:"body"`
+	Body EncryptedBuffer `json:"body"`
 	// BodyLength represents the length of the encrypted body chunk.
 	BodyLength uint32 `json:"body_length"`
 	// Attachments that are already encrypted and hosted inside letter.me.

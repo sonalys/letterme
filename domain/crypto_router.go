@@ -1,4 +1,4 @@
-package cryptography
+package domain
 
 import (
 	"crypto"
@@ -13,15 +13,15 @@ type AlgorithmConfiguration struct {
 	Hash   HashFunc `json:"hash"`
 }
 
-// Configuration is used to fetch configurations related to cryptography.
-type Configuration struct {
+// CryptoConfig is used to fetch configurations related to
+type CryptoConfig struct {
 	Configs          map[AlgorithmName]AlgorithmConfiguration `json:"configs"`
 	DefaultAlgorithm AlgorithmName                            `json:"default_algorithm"`
 }
 
-// Router is responsible for routing custom deserialization for cryptographic algorithms,
+// CryptoRouter is responsible for routing custom deserialization for cryptographic algorithms,
 // and encryption for interfaces.
-type Router struct {
+type CryptoRouter struct {
 	defaultAlgorithm AlgorithmName
 	Algorithms       map[AlgorithmName]EncryptionAlgorithm
 }
@@ -35,8 +35,8 @@ func stringToHash(s HashFunc) (hash.Hash, error) {
 	}
 }
 
-func NewRouter(c *Configuration) (*Router, error) {
-	router := &Router{
+func NewCryptoRouter(c *CryptoConfig) (*CryptoRouter, error) {
+	router := &CryptoRouter{
 		defaultAlgorithm: c.DefaultAlgorithm,
 		Algorithms:       make(map[AlgorithmName]EncryptionAlgorithm),
 	}
@@ -54,14 +54,14 @@ func NewRouter(c *Configuration) (*Router, error) {
 	return router, nil
 }
 
-func (r *Router) addRSA_OAEP(cypher []byte, hash hash.Hash) {
+func (r *CryptoRouter) addRSA_OAEP(cypher []byte, hash hash.Hash) {
 	r.Algorithms[RSA_OAEP] = rsa_oaep{
 		cypher: cypher,
 		hash:   hash,
 	}
 }
 
-func (r *Router) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) error {
+func (r *CryptoRouter) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) error {
 	if algorithm, ok := r.Algorithms[b.Algorithm]; ok {
 		return algorithm.Decrypt(k, b, dst)
 	} else {
@@ -69,7 +69,7 @@ func (r *Router) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) err
 	}
 }
 
-func (r *Router) Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, error) {
+func (r *CryptoRouter) Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, error) {
 	if algorithm, ok := r.Algorithms[r.defaultAlgorithm]; ok {
 		return algorithm.Encrypt(k, src)
 	} else {
@@ -77,7 +77,7 @@ func (r *Router) Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, error
 	}
 }
 
-func (r *Router) EncryptAlgorithm(k *PublicKey, src interface{}, algorithm AlgorithmName) (*EncryptedBuffer, error) {
+func (r *CryptoRouter) EncryptAlgorithm(k *PublicKey, src interface{}, algorithm AlgorithmName) (*EncryptedBuffer, error) {
 	if algorithm, ok := r.Algorithms[algorithm]; ok {
 		return algorithm.Encrypt(k, src)
 	} else {
