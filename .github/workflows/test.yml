@@ -4,23 +4,26 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: [1.17.x]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: golang
-      uses: actions/setup-go@v2
+    - uses: actions/checkout@v2
+    - uses: actions/cache@v2
       with:
-        go-version: ${{ matrix.go-version }}
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v2
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.17.0'
+    - uses: golangci/golangci-lint-action@v2
       with:
         version: v1.42
         working-directory: account_manager
-    - name: mongoDB
-      uses: supercharge/mongodb-github-action@1.6.0
+    - uses: supercharge/mongodb-github-action@1.6.0
       with:
         mongodb-port: 2564
         mongodb-version: '5.0'
