@@ -1,4 +1,4 @@
-# Account manager
+# Account Micro-Service
 This microservice is responsible for:
 - Creating new accounts
 - Fetching information about any account
