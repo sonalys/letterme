@@ -26,6 +26,6 @@ jobs:
     - name: install golangci-lint
       run: |
         curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.42.0
-        cp -a ./bin/. $GOPATH/bin/
+        export PATH=`pwd`/bin:$PATH
     - name: run
       run: cd account_manager && make ci
