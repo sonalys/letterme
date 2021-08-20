@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	errInvalidConfiguration = "invalid mongo configuration"
+	errInvalidConfiguration = "invalid mongo configuration: %#v"
 	errInstance             = "failed to create mongo instance"
 	errConnect              = "failed to connect to mongo"
 	errNotFound             = "no documents were found"
@@ -16,10 +16,20 @@ const (
 	errCast                 = "failed to cast from %T to %T"
 	errOperation            = "error %s documents"
 	errCollectionOperation  = "failed to %s collection '%s'"
+	errInvalidField         = "field '%s' is invalid"
+	errEmptyField           = "field '%s' is empty"
 )
 
-func newInvalidConfigurationError(err error) error {
-	return errors.Wrap(err, errInvalidConfiguration)
+func newInvalidFieldError(name string) error {
+	return fmt.Errorf(errInvalidField, name)
+}
+
+func newEmptyFieldError(name string) error {
+	return fmt.Errorf(errEmptyField, name)
+}
+
+func newInvalidConfigurationError(errList []error) error {
+	return fmt.Errorf(errInvalidConfiguration, errList)
 }
 
 func newInstanceError(err error) error {

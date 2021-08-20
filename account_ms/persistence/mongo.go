@@ -27,6 +27,26 @@ type Configuration struct {
 	DBName      string   `json:"db_name"`
 }
 
+func (c Configuration) Validate() error {
+	var errList []error
+	if len(c.Hosts) == 0 {
+		errList = append(errList, newEmptyFieldError("hosts"))
+	}
+
+	if c.SessionName == "" {
+		errList = append(errList, newEmptyFieldError("session_name"))
+	}
+
+	if c.DBName == "" {
+		errList = append(errList, newEmptyFieldError("db_name"))
+	}
+
+	if len(errList) > 0 {
+		return newInvalidConfigurationError(errList)
+	}
+	return nil
+}
+
 const sleepTimeSeconds = 5
 
 // Wait returns a chan that will return true when db is connected.
@@ -55,7 +75,7 @@ func NewMongo(ctx context.Context, c *Configuration) (*Mongo, error) {
 		SetHosts(c.Hosts)
 
 	if err := opts.Validate(); err != nil {
-		return nil, newInvalidConfigurationError(err)
+		return nil, newInstanceError(err)
 	}
 
 	client, err := mongo.NewClient(opts)

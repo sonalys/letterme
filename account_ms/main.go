@@ -52,7 +52,6 @@ func initializeDependencies(ctx context.Context) *controller.Dependencies {
 	if err := utils.LoadFromEnv(domain.JWT_AUTH_ENV, authConfig); err != nil {
 		panic("failed to initialize authConfig from env")
 	}
-
 	auth := domain.NewJWTAuthenticator(authConfig)
 
 	return &controller.Dependencies{

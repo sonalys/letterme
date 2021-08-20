@@ -19,6 +19,21 @@ type CryptoConfig struct {
 	DefaultAlgorithm AlgorithmName                            `json:"default_algorithm"`
 }
 
+func (c CryptoConfig) Validate() error {
+	var errList []error
+	if len(c.Configs) == 0 {
+		errList = append(errList, newEmptyFieldError("configs"))
+	}
+
+	if c.DefaultAlgorithm == "" {
+		errList = append(errList, newEmptyFieldError("session_name"))
+	}
+	if len(errList) > 0 {
+		return newInvalidConfigError(c, errList)
+	}
+	return nil
+}
+
 // CryptoRouter is responsible for routing custom deserialization for cryptographic algorithms,
 // and encryption for interfaces.
 type CryptoRouter struct {

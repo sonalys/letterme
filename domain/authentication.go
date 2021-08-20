@@ -15,6 +15,21 @@ type AuthConfiguration struct {
 	ExpiryDuration time.Duration `json:"expiry_duration"`
 }
 
+func (c AuthConfiguration) Validate() error {
+	var errList []error
+	if c.PrivateKey.E == 0 {
+		errList = append(errList, newEmptyFieldError("private_key"))
+	}
+
+	if c.ExpiryDuration == time.Duration(0) {
+		errList = append(errList, newEmptyFieldError("expiry_duration"))
+	}
+	if len(errList) > 0 {
+		return newInvalidConfigError(c, errList)
+	}
+	return nil
+}
+
 // TokenClaims are the letter.me customized jwt token claims.
 // Need to have address and expiry date.
 type TokenClaims struct {

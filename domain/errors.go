@@ -24,7 +24,13 @@ const (
 	decryptionError = "failed to decrypt %T"
 
 	errOperationJWT = "failed to %s jwt"
+
+	errInvalidConfiguration = "%T configuration is not valid: %#v"
 )
+
+func newInvalidConfigError(obj interface{}, errList []error) error {
+	return fmt.Errorf(errInvalidConfiguration, obj, errList)
+}
 
 func newOperationJWTError(op string, err error) error {
 	return errors.Wrap(err, fmt.Sprintf(errOperationJWT, op))
