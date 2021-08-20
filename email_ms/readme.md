@@ -22,3 +22,8 @@ Emails that are going to the outside will not have end to end encryption ( e2e )
 We will not store any email going outside, so it will be deleted imediately after sent.
 
 Attachments of outgoing emails to outside letter.me will also need special treatment, it's not defined yet how we can implement this, but we could try allowing attachments to be downloaded a limited amount of times, or set a TTL for the files to exist.
+
+## API Usages
+- Fetch emails for address
+- Send emails from address
+- Require key for linking attachments ( attachments needs to be uploaded previously )
