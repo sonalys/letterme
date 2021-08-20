@@ -3,7 +3,7 @@ package persistence
 import (
 	"testing"
 
-	"github.com/sonalys/letterme/domain"
+	dModels "github.com/sonalys/letterme/domain/models"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -18,7 +18,7 @@ func Test_convertMongoIDsToDatabaseIDs(t *testing.T) {
 		got, err := convertMongoIDsToDatabaseIDs(ids)
 		require.NoError(t, err)
 
-		expected := []domain.DatabaseID{domain.DatabaseID(id1.Hex()), domain.DatabaseID(id2.Hex())}
+		expected := []dModels.DatabaseID{dModels.DatabaseID(id1.Hex()), dModels.DatabaseID(id2.Hex())}
 		require.Equal(t, expected, got)
 	})
 

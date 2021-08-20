@@ -3,7 +3,7 @@ package interfaces
 import (
 	"context"
 
-	"github.com/sonalys/letterme/domain"
+	dModels "github.com/sonalys/letterme/domain/models"
 )
 
 // Persistence encapsulates all required functions from a persistence integration.
@@ -20,7 +20,7 @@ type Persistence interface {
 type Collection interface {
 	First(ctx context.Context, filter, dst interface{}) error
 	List(ctx context.Context, filter, dst interface{}) error
-	Create(ctx context.Context, documents ...interface{}) ([]domain.DatabaseID, error)
+	Create(ctx context.Context, documents ...interface{}) ([]dModels.DatabaseID, error)
 	Update(ctx context.Context, filter, update interface{}) (int64, error)
 	Delete(ctx context.Context, filter interface{}) (int64, error)
 }

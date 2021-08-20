@@ -3,18 +3,18 @@ package controller
 import (
 	"context"
 
-	"github.com/sonalys/letterme/domain"
+	dModels "github.com/sonalys/letterme/domain/models"
 )
 
 // GetAccount returns all available information about the owners account.
 // returns error if ownership doesn't exist.
-func (s *Service) GetAccount(ctx context.Context, ownershipToken domain.OwnershipKey) (account *domain.Account, err error) {
+func (s *Service) GetAccount(ctx context.Context, ownershipToken dModels.OwnershipKey) (account *dModels.Account, err error) {
 	if ownershipToken == "" {
 		return nil, newInvalidRequestError(newEmptyParamError("ownership_key"))
 	}
 
 	col := s.Persistence.GetCollection(accountCollection)
-	account = &domain.Account{
+	account = &dModels.Account{
 		OwnershipKey: ownershipToken,
 	}
 

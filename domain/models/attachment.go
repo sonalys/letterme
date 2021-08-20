@@ -1,8 +1,10 @@
-package domain
+package models
 
 import (
 	"errors"
 	"time"
+
+	"github.com/sonalys/letterme/domain/cryptography"
 )
 
 // AttachmentRequest is a structure that holds unencrypted information about attachments,
@@ -13,7 +15,7 @@ type AttachmentRequest struct {
 }
 
 // Encrypt implements encryptable interface.
-func (m AttachmentRequest) Encrypt(r CryptographicRouter, algorithm AlgorithmName, k *PublicKey) error {
+func (m AttachmentRequest) Encrypt(r cryptography.CryptographicRouter, algorithm cryptography.AlgorithmName, k *cryptography.PublicKey) error {
 	if buf, err := r.EncryptAlgorithm(k, m.URL, algorithm); err == nil {
 		m.Attachment.URL = *buf
 	} else {
@@ -51,7 +53,7 @@ type Attachment struct {
 	ValidUntil time.Time `json:"valid_until"`
 
 	// URL is the link for this encrypted attachment on the storage provider.
-	URL EncryptedBuffer `json:"url"`
+	URL cryptography.EncryptedBuffer `json:"url"`
 
 	// Size represents the attachment size in bytes.
 	Size     uint64   `json:"size"`

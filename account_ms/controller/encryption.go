@@ -1,14 +1,14 @@
 package controller
 
 import (
-	dModels "github.com/sonalys/letterme/domain"
+	"github.com/sonalys/letterme/domain/cryptography"
 )
 
 // nolint:unused // will be.
-func (s *Service) encrypt(k *dModels.PublicKey, src interface{}) (buf *dModels.EncryptedBuffer, err error) {
+func (s *Service) encrypt(k *cryptography.PublicKey, src interface{}) (buf *cryptography.EncryptedBuffer, err error) {
 	return s.CryptographicRouter.Encrypt(k, src)
 }
 
-func (s *Service) decrypt(k *dModels.PrivateKey, b *dModels.EncryptedBuffer, dst interface{}) error {
+func (s *Service) decrypt(k *cryptography.PrivateKey, b *cryptography.EncryptedBuffer, dst interface{}) error {
 	return s.CryptographicRouter.Decrypt(k, b, dst)
 }

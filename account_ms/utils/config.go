@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sonalys/letterme/domain"
+	dModels "github.com/sonalys/letterme/domain/models"
 )
 
 // LoadFromEnv loads config from env into dst.
@@ -20,7 +20,7 @@ func LoadFromEnv(key string, dst interface{}) error {
 		return err
 	}
 
-	if validatable, ok := dst.(domain.Validatable); ok {
+	if validatable, ok := dst.(dModels.Validatable); ok {
 		if err := validatable.Validate(); err != nil {
 			return err
 		}

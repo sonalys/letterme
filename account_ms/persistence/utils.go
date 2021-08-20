@@ -1,19 +1,19 @@
 package persistence
 
 import (
-	"github.com/sonalys/letterme/domain"
+	dModels "github.com/sonalys/letterme/domain/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func convertMongoIDsToDatabaseIDs(ids []interface{}) ([]domain.DatabaseID, error) {
-	buf := make([]domain.DatabaseID, 0, len(ids))
+func convertMongoIDsToDatabaseIDs(ids []interface{}) ([]dModels.DatabaseID, error) {
+	buf := make([]dModels.DatabaseID, 0, len(ids))
 	for i := range ids {
 		if id, ok := ids[i].(primitive.ObjectID); ok {
-			buf = append(buf, domain.DatabaseID(id.Hex()))
+			buf = append(buf, dModels.DatabaseID(id.Hex()))
 		} else {
-			return nil, newCastError(primitive.ObjectID{}, domain.DatabaseID(""))
+			return nil, newCastError(primitive.ObjectID{}, dModels.DatabaseID(""))
 		}
 	}
 	return buf, nil

@@ -3,7 +3,6 @@ package utils
 import (
 	"encoding/json"
 	"errors"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -33,7 +32,7 @@ func Test_LoadFromEnv(t *testing.T) {
 	buf, err := json.Marshal(expConfig)
 	require.NoError(t, err)
 
-	err = os.Setenv(testEnvKey, string(buf))
+	t.Setenv(testEnvKey, string(buf))
 	require.NoError(t, err)
 
 	t.Run("all ok", func(t *testing.T) {
@@ -63,8 +62,7 @@ func Test_LoadFromEnv(t *testing.T) {
 	})
 
 	t.Run("invalid env value", func(t *testing.T) {
-		err = os.Setenv(testEnvKey, "{ invalidJson: 456 }")
-		require.NoError(t, err)
+		t.Setenv(testEnvKey, "{ invalidJson: 456 }")
 
 		resultConfig := new(struct{})
 		err = LoadFromEnv(testEnvKey, resultConfig)

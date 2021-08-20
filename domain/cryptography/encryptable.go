@@ -1,4 +1,4 @@
-package domain
+package cryptography
 
 type Encryptable interface {
 	Encrypt(r CryptographicRouter, k *PublicKey, algorithm AlgorithmName) error

@@ -1,5 +1,5 @@
 // nolint:unused,deadcode // we will use them
-package domain
+package cryptography
 
 import (
 	"fmt"

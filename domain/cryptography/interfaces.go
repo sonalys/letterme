@@ -1,4 +1,4 @@
-package domain
+package cryptography
 
 // EncryptionAlgorithm will be used to allow our system to use multiple
 // encryption algorithms, that can be changed at any time.
@@ -18,6 +18,6 @@ type CryptographicRouter interface {
 // Authenticator is an entity capable of transforming claims to an encoded string,
 // and later decrypt this encrypted buffer to claims again.
 type Authenticator interface {
-	CreateToken(address Address) (string, error)
-	ReadToken(buf string) (*TokenClaims, error)
+	CreateToken(claim Claim) (string, error)
+	ReadToken(buf string, dst interface{}) error
 }

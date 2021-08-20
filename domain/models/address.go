@@ -1,4 +1,4 @@
-package domain
+package models
 
 import (
 	"errors"
@@ -25,7 +25,7 @@ func (m Address) Validate() error {
 	return nil
 }
 
-// Domain is used to get the email domain.
+// Domain is used to get the email dModels.
 //
 // Example:
 //	"alysson@letter.me" => "letter.me"

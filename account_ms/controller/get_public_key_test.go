@@ -4,34 +4,33 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sonalys/letterme/domain"
+	"github.com/sonalys/letterme/domain/cryptography"
+	dModels "github.com/sonalys/letterme/domain/models"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_GetPublicKey(t *testing.T) {
 	ctx := context.Background()
-	db := createPersistence(ctx, t)
-	svc, err := NewService(ctx, &Dependencies{
-		Persistence: db,
-	})
+	svc, err := InitializeFromEnv(ctx)
 	require.NoError(t, err)
-	col := svc.Persistence.GetCollection("account")
+
+	col := svc.Persistence.GetCollection(accountCollection)
 	defer t.Run("cleanup", func(t *testing.T) {
 		_, err := col.Delete(ctx, filter{})
 		require.NoError(t, err, "should clear collection")
 	})
 
-	email := domain.Address("alysson@letter.me")
-	privateKey, err := domain.NewPrivateKey(2048)
+	email := dModels.Address("alysson@letter.me")
+	privateKey, err := cryptography.NewPrivateKey(2048)
 	require.NoError(t, err)
 
 	publicKey := privateKey.GetPublicKey()
-	account := domain.Account{
+	account := dModels.Account{
 		OwnershipKey: "123",
 		PublicKey:    *publicKey,
-		Addresses: []domain.Address{
+		Addresses: []dModels.Address{
 			email,
-			domain.Address("alysson_2@letter.me"),
+			dModels.Address("alysson_2@letter.me"),
 		},
 	}
 
@@ -39,7 +38,7 @@ func Test_GetPublicKey(t *testing.T) {
 		_, err := col.Create(ctx, account)
 		require.NoError(t, err, "should create account")
 
-		account.Addresses = []domain.Address{"priscila@gmail.com"}
+		account.Addresses = []dModels.Address{"priscila@gmail.com"}
 		_, err = col.Create(ctx, account)
 		require.NoError(t, err, "should create dummy account")
 	})

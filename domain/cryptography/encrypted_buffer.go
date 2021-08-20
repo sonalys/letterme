@@ -1,4 +1,4 @@
-package domain
+package cryptography
 
 // AlgorithmName represents all compatible encryption algorithms.
 type AlgorithmName string

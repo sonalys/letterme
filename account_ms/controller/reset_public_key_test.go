@@ -6,24 +6,23 @@ import (
 
 	"github.com/sonalys/letterme/account_manager/models"
 
-	dModels "github.com/sonalys/letterme/domain"
+	"github.com/sonalys/letterme/domain/cryptography"
+	dModels "github.com/sonalys/letterme/domain/models"
 	"github.com/stretchr/testify/require"
 )
 
 func Test_ResetPublicKey(t *testing.T) {
 	ctx := context.Background()
-	db := createPersistence(ctx, t)
-	svc, err := NewService(ctx, &Dependencies{
-		Persistence: db,
-	})
+	svc, err := InitializeFromEnv(ctx)
 	require.NoError(t, err)
-	col := svc.Persistence.GetCollection("account")
+
+	col := svc.Persistence.GetCollection(accountCollection)
 	defer t.Run("cleanup", func(t *testing.T) {
 		_, err := col.Delete(ctx, filter{})
 		require.NoError(t, err, "should clear collection")
 	})
 
-	oldKey, err := dModels.NewPrivateKey(2048)
+	oldKey, err := cryptography.NewPrivateKey(2048)
 	require.NoError(t, err, "should create old private key")
 
 	account := dModels.Account{
@@ -38,7 +37,7 @@ func Test_ResetPublicKey(t *testing.T) {
 	_, err = col.Create(ctx, account)
 	require.NoError(t, err, "should create account")
 
-	newKey, err := dModels.NewPrivateKey(2048)
+	newKey, err := cryptography.NewPrivateKey(2048)
 	require.NoError(t, err, "should create new private key")
 
 	newPublicKey := newKey.GetPublicKey()

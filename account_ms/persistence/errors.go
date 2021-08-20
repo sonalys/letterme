@@ -16,13 +16,8 @@ const (
 	errCast                 = "failed to cast from %T to %T"
 	errOperation            = "error %s documents"
 	errCollectionOperation  = "failed to %s collection '%s'"
-	errInvalidField         = "field '%s' is invalid"
 	errEmptyField           = "field '%s' is empty"
 )
-
-func newInvalidFieldError(name string) error {
-	return fmt.Errorf(errInvalidField, name)
-}
 
 func newEmptyFieldError(name string) error {
 	return fmt.Errorf(errEmptyField, name)
