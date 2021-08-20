@@ -4,9 +4,9 @@ type OwnershipKey string
 
 // EncryptValue implements encryptableValue interface.
 func (m OwnershipKey) EncryptValue(r CryptographicRouter, k *PublicKey, algorithm AlgorithmName) (*EncryptedBuffer, error) {
-	if buf, err := r.EncryptAlgorithm(k, m, algorithm); err == nil {
+	buf, err := r.EncryptAlgorithm(k, m, algorithm)
+	if err == nil {
 		return buf, nil
-	} else {
-		return nil, newEncryptionError(m, err)
 	}
+	return nil, newEncryptionError(m, err)
 }

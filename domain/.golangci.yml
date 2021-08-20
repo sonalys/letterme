@@ -37,7 +37,6 @@ linters:
     - bodyclose
     - whitespace
     - gocognit
-    - gomnd
 
 issues:
   exclude-use-default: false

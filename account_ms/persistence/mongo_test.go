@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/sonalys/letterme/account_manager/utils"
 	"github.com/sonalys/letterme/domain"
@@ -19,6 +20,13 @@ func Test_Mongo(t *testing.T) {
 	mongo, err := NewMongo(ctx, &cfg)
 	require.NoError(t, err, "should create without errors")
 	require.NotNil(t, mongo, "mongo instance should exist")
+
+	select {
+	case <-mongo.Wait():
+		break
+	case <-time.After(5 * time.Second):
+		require.Fail(t, "database connection timedout")
+	}
 
 	colName := "test-collection"
 	col, err := mongo.CreateCollection(colName, []map[string]interface{}{

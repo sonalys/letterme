@@ -29,7 +29,7 @@ func Test_Authenticate(t *testing.T) {
 
 	jwtDuration := time.Hour
 	jwtAuthenticator := domain.NewJWTAuthenticator(&domain.AuthConfiguration{
-		PrivateKey:     *serviceKey,
+		PrivateKey:     serviceKey,
 		ExpiryDuration: jwtDuration,
 	})
 

@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/sonalys/letterme/account_manager/interfaces"
 	"github.com/sonalys/letterme/account_manager/persistence"
@@ -18,6 +19,13 @@ func createPersistence(ctx context.Context, t *testing.T) interfaces.Persistence
 
 	mongo, err := persistence.NewMongo(ctx, &cfg)
 	require.NoError(t, err, "should create without errors")
+
+	select {
+	case <-mongo.Wait():
+		break
+	case <-time.After(5 * time.Second):
+		require.Fail(t, "database connection timedout")
+	}
 
 	return mongo
 }

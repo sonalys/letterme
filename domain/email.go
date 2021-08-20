@@ -6,7 +6,7 @@ import (
 )
 
 // UnencryptedEmail is used to receive/send emails from/to outside letter.me,
-// It contains decrypted content, and should be encrypted imediately after processing.
+// It contains decrypted content, and should be encrypted immediately after processing.
 //
 // It needs to be processed first because it's encrypted using the public key of each recipient.
 type UnencryptedEmail struct {

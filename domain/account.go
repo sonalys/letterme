@@ -11,7 +11,7 @@ import (
 // Must be linked to a unique code, which can be used to delete the account or re-upload a new private certificate later.
 type Account struct {
 	ID DatabaseID `json:"id" bson:"_id,omitempty"`
-	// Addresses are the many email addresses posessed by this account.
+	// Addresses are the many email addresses possessed by this account.
 	Addresses []Address `json:"addresses" bson:"addresses,omitempty"`
 	// PublicKey is used to encrypt all data sent to this user.
 	PublicKey PublicKey `json:"public_key" bson:"publicKey,omitempty"`

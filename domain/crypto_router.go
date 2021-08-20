@@ -57,6 +57,7 @@ func NewCryptoRouter(c *CryptoConfig) (*CryptoRouter, error) {
 	}
 
 	for algorithm, config := range c.Configs {
+		// nolint // will have more algorithms in the future, we will keep switch-case
 		switch algorithm {
 		case RSA_OAEP:
 			hashAlg, err := stringToHash(config.Hash)
@@ -69,33 +70,33 @@ func NewCryptoRouter(c *CryptoConfig) (*CryptoRouter, error) {
 	return router, nil
 }
 
-func (r *CryptoRouter) addRSA_OAEP(cypher []byte, hash hash.Hash) {
+func (r *CryptoRouter) addRSA_OAEP(cypher []byte, hashAlgorithm hash.Hash) {
 	r.Algorithms[RSA_OAEP] = rsa_oaep{
 		cypher: cypher,
-		hash:   hash,
+		hash:   hashAlgorithm,
 	}
 }
 
 func (r *CryptoRouter) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) error {
-	if algorithm, ok := r.Algorithms[b.Algorithm]; ok {
+	algorithm, ok := r.Algorithms[b.Algorithm]
+	if ok {
 		return algorithm.Decrypt(k, b, dst)
-	} else {
-		return fmt.Errorf("handler for '%s' not found", b.Algorithm)
 	}
+	return fmt.Errorf("handler for '%s' not found", b.Algorithm)
 }
 
 func (r *CryptoRouter) Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, error) {
-	if algorithm, ok := r.Algorithms[r.defaultAlgorithm]; ok {
+	algorithm, ok := r.Algorithms[r.defaultAlgorithm]
+	if ok {
 		return algorithm.Encrypt(k, src)
-	} else {
-		return nil, fmt.Errorf("handler for '%s' not found", algorithm)
 	}
+	return nil, fmt.Errorf("handler for '%s' not found", algorithm)
 }
 
-func (r *CryptoRouter) EncryptAlgorithm(k *PublicKey, src interface{}, algorithm AlgorithmName) (*EncryptedBuffer, error) {
-	if algorithm, ok := r.Algorithms[algorithm]; ok {
+func (r *CryptoRouter) EncryptAlgorithm(k *PublicKey, src interface{}, name AlgorithmName) (*EncryptedBuffer, error) {
+	algorithm, ok := r.Algorithms[name]
+	if !ok {
 		return algorithm.Encrypt(k, src)
-	} else {
-		return nil, fmt.Errorf("handler for '%s' not found", algorithm)
 	}
+	return nil, fmt.Errorf("handler for '%s' not found", algorithm)
 }

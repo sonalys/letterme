@@ -104,12 +104,12 @@ func (k PrivateKey) Get() *rsa.PrivateKey {
 
 // NewPrivateKey generates a new RSA privateKey.
 func NewPrivateKey(b int) (*PrivateKey, error) {
-	if pk, err := rsa.GenerateKey(rand.Reader, b); err != nil {
+	pk, err := rsa.GenerateKey(rand.Reader, b)
+	if err != nil {
 		return nil, err
-	} else {
-		pk := PrivateKey(*pk)
-		return &pk, nil
 	}
+	privateKey := PrivateKey(*pk)
+	return &privateKey, nil
 }
 
 type rsa_oaep struct {

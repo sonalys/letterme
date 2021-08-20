@@ -1,7 +1,9 @@
+// nolint:unused,deadcode // we will use them
 package domain
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 )
 

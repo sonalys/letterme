@@ -11,7 +11,7 @@ const JWT_AUTH_ENV = "LM_JWT_CONFIG"
 
 // Configuration is the data required to configure a new Auth service.
 type AuthConfiguration struct {
-	PrivateKey     PrivateKey    `json:"private_key"`
+	PrivateKey     *PrivateKey   `json:"private_key"`
 	ExpiryDuration time.Duration `json:"expiry_duration"`
 }
 
@@ -39,7 +39,7 @@ type TokenClaims struct {
 
 // JWTAuthenticator is a authentication manager, to auth, deauth and authenticate access tokens.
 type JWTAuthenticator struct {
-	privateKey     PrivateKey
+	privateKey     *PrivateKey
 	expiryDuration time.Duration
 }
 
@@ -77,9 +77,9 @@ func (a *JWTAuthenticator) ReadToken(buf string) (*TokenClaims, error) {
 		return nil, newOperationJWTError("parse", err)
 	}
 
-	if claims, ok := token.Claims.(*TokenClaims); ok {
+	claims, ok := token.Claims.(*TokenClaims)
+	if ok {
 		return claims, nil
-	} else {
-		return nil, newOperationJWTError("read", errors.New("failed to parse decoded jwt token to claims"))
 	}
+	return nil, newOperationJWTError("read", errors.New("failed to parse decoded jwt token to claims"))
 }
