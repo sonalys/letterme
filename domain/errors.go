@@ -14,8 +14,9 @@ type ErrorResponse struct {
 }
 
 const (
-	invalidType = "%s '%s' is not valid"
-	emptyField  = "field '%s' cannot be empty"
+	invalidType  = "%s '%s' is not valid"
+	invalidField = "field '%s' is invalid"
+	emptyField   = "field '%s' cannot be empty"
 
 	emailInvalid = "email is not valid: %#v"
 	emailEmpty   = "email cannot be empty"
@@ -52,6 +53,10 @@ func newInvalidTypeError(typeName, fieldName string, err error) error {
 
 func newEmptyFieldError(fieldName string) error {
 	return fmt.Errorf(emptyField, fieldName)
+}
+
+func newInvalidFieldError(fieldName string, err error) error {
+	return errors.Wrap(err, fmt.Sprintf(invalidField, fieldName))
 }
 
 func newEmailError(errList []error) error {

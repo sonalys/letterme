@@ -13,6 +13,22 @@ type AlgorithmConfiguration struct {
 	Hash   HashFunc `json:"hash"`
 }
 
+func (c AlgorithmConfiguration) Validate() error {
+	var errList []error
+	if len(c.Cypher) == 0 {
+		errList = append(errList, newEmptyFieldError("cypher"))
+	}
+
+	if c.Hash == "" {
+		errList = append(errList, newEmptyFieldError("hash"))
+	}
+
+	if len(errList) > 0 {
+		return newInvalidConfigError(c, errList)
+	}
+	return nil
+}
+
 // CryptoConfig is used to fetch configurations related to
 type CryptoConfig struct {
 	Configs          map[AlgorithmName]AlgorithmConfiguration `json:"configs"`
@@ -23,6 +39,24 @@ func (c CryptoConfig) Validate() error {
 	var errList []error
 	if len(c.Configs) == 0 {
 		errList = append(errList, newEmptyFieldError("configs"))
+	}
+
+	for key := range c.Configs {
+		if key != RSA_OAEP {
+			errList = append(errList, newInvalidFieldError(
+				fmt.Sprintf("configs[%s]", key),
+				fmt.Errorf("'%s' is not a valid hash name", key),
+			))
+		}
+		if err := c.Configs[key].Validate(); err != nil {
+			errList = append(
+				errList,
+				newInvalidFieldError(
+					fmt.Sprintf("configs[%s]", key),
+					err,
+				),
+			)
+		}
 	}
 
 	if c.DefaultAlgorithm == "" {
@@ -79,24 +113,24 @@ func (r *CryptoRouter) addRSA_OAEP(cypher []byte, hashAlgorithm hash.Hash) {
 
 func (r *CryptoRouter) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) error {
 	algorithm, ok := r.Algorithms[b.Algorithm]
-	if ok {
-		return algorithm.Decrypt(k, b, dst)
+	if !ok {
+		return fmt.Errorf("handler for '%s' not found", b.Algorithm)
 	}
-	return fmt.Errorf("handler for '%s' not found", b.Algorithm)
+	return algorithm.Decrypt(k, b, dst)
 }
 
 func (r *CryptoRouter) Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, error) {
 	algorithm, ok := r.Algorithms[r.defaultAlgorithm]
-	if ok {
-		return algorithm.Encrypt(k, src)
+	if !ok {
+		return nil, fmt.Errorf("handler for '%s' not found", r.defaultAlgorithm)
 	}
-	return nil, fmt.Errorf("handler for '%s' not found", algorithm)
+	return algorithm.Encrypt(k, src)
 }
 
 func (r *CryptoRouter) EncryptAlgorithm(k *PublicKey, src interface{}, name AlgorithmName) (*EncryptedBuffer, error) {
 	algorithm, ok := r.Algorithms[name]
 	if !ok {
-		return algorithm.Encrypt(k, src)
+		return nil, fmt.Errorf("handler for '%s' not found", name)
 	}
-	return nil, fmt.Errorf("handler for '%s' not found", algorithm)
+	return algorithm.Encrypt(k, src)
 }

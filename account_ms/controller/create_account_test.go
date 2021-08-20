@@ -12,24 +12,9 @@ import (
 
 func Test_CreateAccount(t *testing.T) {
 	ctx := context.Background()
-	db := createPersistence(ctx, t)
-
-	router, err := domain.NewCryptoRouter(&domain.CryptoConfig{
-		DefaultAlgorithm: domain.RSA_OAEP,
-		Configs: map[domain.AlgorithmName]domain.AlgorithmConfiguration{
-			domain.RSA_OAEP: {
-				Cypher: []byte("123"),
-				Hash:   "sha-256",
-			},
-		},
-	})
+	svc, err := InitializeFromEnv(ctx)
 	require.NoError(t, err)
 
-	svc, err := NewService(ctx, &Dependencies{
-		Persistence:         db,
-		CryptographicRouter: router,
-	})
-	require.NoError(t, err)
 	col := svc.Persistence.GetCollection("account")
 
 	defer t.Run("cleanup", func(t *testing.T) {
@@ -37,12 +22,12 @@ func Test_CreateAccount(t *testing.T) {
 		require.NoError(t, err, "should clear collection")
 	})
 
-	pk, err := domain.NewPrivateKey(2048)
+	clientKey, err := domain.NewPrivateKey(2048)
 	require.NoError(t, err, "private key should be created")
 
 	account := models.CreateAccountRequest{
 		Address:   "alysson@letter.me",
-		PublicKey: *pk.GetPublicKey(),
+		PublicKey: *clientKey.GetPublicKey(),
 	}
 
 	var encryptedToken *domain.EncryptedBuffer
@@ -53,7 +38,7 @@ func Test_CreateAccount(t *testing.T) {
 	})
 
 	decryptedOwnershipKey := new(domain.OwnershipKey)
-	err = svc.decrypt(pk, encryptedToken, decryptedOwnershipKey)
+	err = svc.decrypt(clientKey, encryptedToken, decryptedOwnershipKey)
 	require.NoError(t, err, "ownership_key should be decrypted")
 
 	t.Run("dbAccount verification", func(t *testing.T) {

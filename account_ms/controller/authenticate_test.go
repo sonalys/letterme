@@ -11,7 +11,6 @@ import (
 
 func Test_Authenticate(t *testing.T) {
 	ctx := context.Background()
-
 	svc, err := InitializeFromEnv(ctx)
 	require.NoError(t, err)
 
@@ -22,12 +21,12 @@ func Test_Authenticate(t *testing.T) {
 		require.NoError(t, err, "should clear collection")
 	})
 
-	pk, err := domain.NewPrivateKey(2048)
+	clientKey, err := domain.NewPrivateKey(2048)
 	require.NoError(t, err, "private key should be created")
 
 	account := domain.Account{
 		Addresses: []domain.Address{domain.Address("alysson@letter.me")},
-		PublicKey: *pk.GetPublicKey(),
+		PublicKey: *clientKey.GetPublicKey(),
 	}
 
 	_, err = col.Create(ctx, account)
@@ -39,7 +38,7 @@ func Test_Authenticate(t *testing.T) {
 		require.NotNil(t, encryptedJWT)
 
 		var jwtToken string
-		err = svc.decrypt(pk, encryptedJWT, &jwtToken)
+		err = svc.decrypt(clientKey, encryptedJWT, &jwtToken)
 		require.NoError(t, err, "should decrypt jwt token client side")
 
 		var claims *domain.TokenClaims
