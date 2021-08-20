@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/sirupsen/logrus"
-	"github.com/sonalys/letterme/account_manager/models"
+	"github.com/sonalys/letterme/account_ms/models"
 	dModels "github.com/sonalys/letterme/domain/models"
 )
 

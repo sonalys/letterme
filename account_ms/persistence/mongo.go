@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/sonalys/letterme/account_manager/interfaces"
+	"github.com/sonalys/letterme/account_ms/interfaces"
 	dModels "github.com/sonalys/letterme/domain/models"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

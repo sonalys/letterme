@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/sonalys/letterme/account_manager/interfaces"
-	"github.com/sonalys/letterme/account_manager/persistence"
-	"github.com/sonalys/letterme/account_manager/utils"
+	"github.com/sonalys/letterme/account_ms/interfaces"
+	"github.com/sonalys/letterme/account_ms/persistence"
+	"github.com/sonalys/letterme/account_ms/utils"
 
 	"github.com/sonalys/letterme/domain/cryptography"
 	dModels "github.com/sonalys/letterme/domain/models"

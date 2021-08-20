@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	account_managermodels "github.com/sonalys/letterme/account_manager/models"
+	account_managermodels "github.com/sonalys/letterme/account_ms/models"
 
 	cryptography "github.com/sonalys/letterme/domain/cryptography"
 

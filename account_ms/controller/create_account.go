@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sonalys/letterme/account_manager/models"
+	"github.com/sonalys/letterme/account_ms/models"
 	"github.com/sonalys/letterme/domain/cryptography"
 	dModels "github.com/sonalys/letterme/domain/models"
 )

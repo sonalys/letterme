@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	interfaces "github.com/sonalys/letterme/account_manager/interfaces"
+	interfaces "github.com/sonalys/letterme/account_ms/interfaces"
 	mock "github.com/stretchr/testify/mock"
 )
 

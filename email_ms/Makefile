@@ -8,7 +8,7 @@ start_mongo:
 
 test:
 	go test ./... -race -failfast -covermode=atomic -coverprofile=coverage.out \
-	-coverpkg=./controller/...,./persistence...,./utils/... ./...
+	-coverpkg=./... ./...
 
 lint:
 	golangci-lint run --config .golangci.yml --timeout=5m

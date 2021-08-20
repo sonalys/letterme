@@ -23,6 +23,23 @@ We will not store any email going outside, so it will be deleted imediately afte
 
 Attachments of outgoing emails to outside letter.me will also need special treatment, it's not defined yet how we can implement this, but we could try allowing attachments to be downloaded a limited amount of times, or set a TTL for the files to exist.
 
+
+### Attachments
+We don't have anything certain about it yet, but there are 3 kinds of attachments we will need to handle.
+
+|type|encrypted|protections|
+|-|-|-|
+|external sent|configurable|password, ip ( block providers, or countries, or allow only receiver ip, ip mask ), number of downloads|
+|external received|during processing|encryption only|
+|internal|end2end|fully protected encryption|
+
+#### Protections
+`TODO: First we need to know how attachments are handled by other SMTPS`
+
+* Password: require a password for downloading the attachment
+* IP: block gmail, microsoft..., block countries, allow only ip mask
+* Max downloads: only allow a certain number of authorized downloads before deletion
+
 ## API Usages
 - Fetch emails for address
 - Send emails from address

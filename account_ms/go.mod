@@ -1,4 +1,4 @@
-module github.com/sonalys/letterme/account_manager
+module github.com/sonalys/letterme/account_ms
 
 go 1.17
 
