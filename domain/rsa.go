@@ -17,47 +17,49 @@ type PublicKey rsa.PublicKey
 
 // MarshalJSON implements JSON marshaling interface.
 func (k PublicKey) MarshalJSON() ([]byte, error) {
-	return x509.MarshalPKCS1PublicKey(k.Get()), nil
+	return json.Marshal(x509.MarshalPKCS1PublicKey(k.Get()))
 }
 
 // UnmarshalJSON implements JSON unmarshaling interface.
 func (k *PublicKey) UnmarshalJSON(data []byte) error {
-	privateKey, err := x509.ParsePKCS1PublicKey(data)
+	buf := new([]byte)
+	if err := json.Unmarshal(data, buf); err != nil {
+		return err
+	}
+
+	publicKey, err := x509.ParsePKCS1PublicKey(*buf)
 	if err != nil {
 		return err
 	}
-	*k = PublicKey(*privateKey)
+	*k = PublicKey(*publicKey)
 	return nil
 }
 
 // MarshalBSONValue implements BSON marshaling interface.
 // PublicKey needs custom encoding because bson doesn't know how to do it.
-func (s PublicKey) MarshalBSONValue() (bsontype.Type, []byte, error) {
-	bytes, err := s.MarshalJSON()
-	if err != nil {
-		return bson.TypeBinary, nil, err
-	}
+func (k PublicKey) MarshalBSONValue() (bsontype.Type, []byte, error) {
+	bytes := x509.MarshalPKCS1PublicKey(k.Get())
 	return bson.MarshalValue(bytes)
 }
 
 // UnmarshalBSONValue implements BSON unmarshaling interface.
 // PublicKey needs custom encoding because bson doesn't know how to do it.
-func (s *PublicKey) UnmarshalBSONValue(dataType bsontype.Type, data []byte) error {
+func (k *PublicKey) UnmarshalBSONValue(dataType bsontype.Type, data []byte) error {
 	if dataType == bsontype.Null {
 		return nil
 	}
 
 	_, buf, ok := (bson.RawValue{Type: dataType, Value: data}).BinaryOK()
 	if !ok {
-		return fmt.Errorf("failed decode binary to publicKey from %v", dataType)
+		return fmt.Errorf("failed decoding binary to publicKey from %v", dataType)
 	}
 
-	var pk PublicKey
-	if err := pk.UnmarshalJSON(buf); err != nil {
-		return fmt.Errorf("failed decode object publicKey from %v", dataType)
+	publicKey, err := x509.ParsePKCS1PublicKey(buf)
+	if err != nil {
+		return err
 	}
 
-	*s = pk
+	*k = PublicKey(*publicKey)
 	return nil
 }
 
@@ -77,12 +79,17 @@ type PrivateKey rsa.PrivateKey
 
 // MarshalJSON implements JSON marshaling interface.
 func (k PrivateKey) MarshalJSON() ([]byte, error) {
-	return x509.MarshalPKCS1PrivateKey(k.Get()), nil
+	return json.Marshal(x509.MarshalPKCS1PrivateKey(k.Get()))
 }
 
 // UnmarshalJSON implements JSON unmarshaling interface.
 func (k *PrivateKey) UnmarshalJSON(data []byte) error {
-	privateKey, err := x509.ParsePKCS1PrivateKey(data)
+	buf := new([]byte)
+	if err := json.Unmarshal(data, buf); err != nil {
+		return err
+	}
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(*buf)
 	if err != nil {
 		return err
 	}
@@ -171,6 +178,6 @@ func (r rsa_oaep) Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, erro
 	return &EncryptedBuffer{
 		Buffer:    encryptedBytes,
 		Algorithm: RSA_OAEP,
-		Hash:      sha256,
+		Hash:      SHA256,
 	}, nil
 }

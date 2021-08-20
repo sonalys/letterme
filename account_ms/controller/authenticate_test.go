@@ -11,34 +11,10 @@ import (
 
 func Test_Authenticate(t *testing.T) {
 	ctx := context.Background()
-	db := createPersistence(ctx, t)
 
-	serviceKey, err := domain.NewPrivateKey(2048)
-	require.NoError(t, err, "private key should be created")
-
-	router, err := domain.NewCryptoRouter(&domain.CryptoConfig{
-		DefaultAlgorithm: domain.RSA_OAEP,
-		Configs: map[domain.AlgorithmName]domain.AlgorithmConfiguration{
-			domain.RSA_OAEP: {
-				Cypher: []byte("123"),
-				Hash:   "sha-256",
-			},
-		},
-	})
+	svc, err := InitializeFromEnv(ctx)
 	require.NoError(t, err)
 
-	jwtDuration := time.Hour
-	jwtAuthenticator := domain.NewJWTAuthenticator(&domain.AuthConfiguration{
-		PrivateKey:     serviceKey,
-		ExpiryDuration: jwtDuration,
-	})
-
-	svc, err := NewService(ctx, &Dependencies{
-		Persistence:         db,
-		CryptographicRouter: router,
-		Authenticator:       jwtAuthenticator,
-	})
-	require.NoError(t, err)
 	col := svc.Persistence.GetCollection("account")
 
 	defer t.Run("cleanup", func(t *testing.T) {
@@ -46,7 +22,7 @@ func Test_Authenticate(t *testing.T) {
 		require.NoError(t, err, "should clear collection")
 	})
 
-	pk, err := domain.NewPrivateKey(4096)
+	pk, err := domain.NewPrivateKey(2048)
 	require.NoError(t, err, "private key should be created")
 
 	account := domain.Account{
@@ -70,6 +46,6 @@ func Test_Authenticate(t *testing.T) {
 		claims, err = svc.Authenticator.ReadToken(jwtToken)
 		require.NoError(t, err, "should read claims without errors")
 		require.Equal(t, account.Addresses[0], claims.Address, "claim address should match")
-		require.GreaterOrEqual(t, time.Now().Add(jwtDuration).Unix(), claims.ExpiresAt, "claim expiry date should be expired after %s", jwtDuration)
+		require.GreaterOrEqual(t, time.Now().Add(time.Hour).Unix(), claims.ExpiresAt, "claim expiry date should be expired after %s", time.Hour)
 	})
 }

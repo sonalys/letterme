@@ -11,7 +11,7 @@ const (
 type HashFunc string
 
 const (
-	sha256 HashFunc = "sha-256"
+	SHA256 HashFunc = "sha-256"
 )
 
 // EncryptedBuffer is used to keep compatibility in case of encryption algorithm changes to the system.

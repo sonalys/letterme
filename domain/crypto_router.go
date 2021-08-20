@@ -6,7 +6,7 @@ import (
 	"hash"
 )
 
-const CRYPTO_CYPHER_ENV = "LM_CRYPTO_CYPHER"
+const CRYPTO_CYPHER_ENV = "LM_CRYPTO_CONFIG"
 
 type AlgorithmConfiguration struct {
 	Cypher []byte   `json:"cypher"`
@@ -43,7 +43,7 @@ type CryptoRouter struct {
 
 func stringToHash(s HashFunc) (hash.Hash, error) {
 	switch s {
-	case sha256:
+	case SHA256:
 		return crypto.SHA256.New(), nil
 	default:
 		return nil, fmt.Errorf("hash not found: '%s'", s)

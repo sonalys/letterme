@@ -3,7 +3,10 @@ package controller
 import (
 	"context"
 
+	"github.com/sirupsen/logrus"
 	"github.com/sonalys/letterme/account_manager/interfaces"
+	"github.com/sonalys/letterme/account_manager/persistence"
+	"github.com/sonalys/letterme/account_manager/utils"
 
 	"github.com/sonalys/letterme/domain"
 )
@@ -41,6 +44,40 @@ func NewService(ctx context.Context, d *Dependencies) (*Service, error) {
 		Context:      ctx,
 		Dependencies: d,
 	}, nil
+}
+
+// InitializeFromEnv initializes the service from env variables.
+func InitializeFromEnv(ctx context.Context) (*Service, error) {
+	mongoConfig := new(persistence.Configuration)
+	if err := utils.LoadFromEnv(persistence.MongoEnv, mongoConfig); err != nil {
+		logrus.Panicf("failed to initialize mongoConfig from env: %s", err)
+	}
+	mongo, err := persistence.NewMongo(ctx, mongoConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	cryptographicConfig := new(domain.CryptoConfig)
+	if err := utils.LoadFromEnv(domain.CRYPTO_CYPHER_ENV, cryptographicConfig); err != nil {
+		logrus.Panicf("failed to initialize cryptographicConfig from env: %s", err)
+	}
+
+	router, err := domain.NewCryptoRouter(cryptographicConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	authConfig := new(domain.AuthConfiguration)
+	if err := utils.LoadFromEnv(domain.JWT_AUTH_ENV, authConfig); err != nil {
+		logrus.Panicf("failed to initialize authConfig from env: %s", err)
+	}
+	auth := domain.NewJWTAuthenticator(authConfig)
+
+	return NewService(ctx, &Dependencies{
+		Persistence:         mongo,
+		CryptographicRouter: router,
+		Authenticator:       auth,
+	})
 }
 
 // AddNewDevice todo.
