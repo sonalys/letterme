@@ -19,12 +19,13 @@ jobs:
     - uses: actions/setup-go@v2
       with:
         go-version: '1.17.0'
-    - uses: golangci/golangci-lint-action@v2
-      with:
-        version: v1.42
     - uses: supercharge/mongodb-github-action@1.6.0
       with:
         mongodb-port: 2564
         mongodb-version: '5.0'
+    - name: install golangci-lint
+      run: |
+        curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.42.0
+        cp -a ./bin/. $GOPATH/bin/
     - name: run
       run: cd account_manager && make ci
