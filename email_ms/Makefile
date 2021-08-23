@@ -7,7 +7,7 @@ start_mongo:
 	docker run --rm -d -p ${MONGO_PORT}:27017 --name letterme_mongo mongo:5.0
 
 test:
-	go test ./... -race -failfast -covermode=atomic -coverprofile=coverage.out \
+	go test ./... -failfast -covermode=atomic -coverprofile=coverage.out \
 	-coverpkg=./... ./...
 
 lint:

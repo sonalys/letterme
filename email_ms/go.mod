@@ -5,8 +5,8 @@ go 1.17
 replace github.com/sonalys/letterme/domain => ../domain
 
 require (
-	github.com/davecgh/go-spew v1.1.1
 	github.com/domodwyer/mailyak/v3 v3.3.3
+	github.com/google/uuid v1.3.0
 	github.com/jhillyerd/enmime v0.9.2
 	github.com/sirupsen/logrus v1.4.2
 	github.com/sonalys/letterme/domain v0.0.0-00010101000000-000000000000
@@ -15,6 +15,7 @@ require (
 
 require (
 	github.com/cention-sany/utf7 v0.0.0-20170124080048-26cad61bd60a // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gogs/chardet v0.0.0-20191104214054-4b6791f73a28 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect

@@ -3,7 +3,6 @@ package smtp
 import (
 	"context"
 	"testing"
-	"time"
 
 	mailyak "github.com/domodwyer/mailyak/v3"
 	"github.com/stretchr/testify/require"
@@ -35,5 +34,4 @@ func Test_Server(t *testing.T) {
 
 	// mail.Send()
 	require.NoError(t, mail.Send())
-	<-time.After(10 * time.Second)
 }
