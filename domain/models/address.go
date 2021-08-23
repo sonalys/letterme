@@ -20,7 +20,7 @@ func (m Address) Validate() error {
 	}
 
 	if isValid := emailRegex.MatchString(string(m)); !isValid {
-		return newInvalidTypeError("address", string(m), errors.New("value is not valid"))
+		return newInvalidTypeError("address", string(m), errors.New("must be a valid email"))
 	}
 	return nil
 }

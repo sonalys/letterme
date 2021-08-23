@@ -2,10 +2,11 @@ package smtp
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/jhillyerd/enmime"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/sonalys/letterme/domain/models"
 )
@@ -34,16 +35,16 @@ const (
 
 	// Response section.
 
-	responseOK    = "250 2.1.0 OK"
-	responseReady = "354 Ready"
+	responseOK    = "250 OK"
+	responseReady = "354 READY"
 
 	// // // // // // // // //
 
 	// Error section.
 
-	errNestedEmail  = "503 NESTEDEMAIL nested MAIL command\r\n"
-	errTooBig       = "552 email is too big\r\n"
-	errInvalidEmail = "450 4.7.1 %s\r\n"
+	errNestedEmail  = "503 ALREADY IN TRANSACTION\r\n"
+	errTooBig       = "552 EMAIL IS TOO BIG\r\n"
+	errInvalidEmail = "450 %s\r\n"
 )
 
 const (
@@ -87,6 +88,12 @@ const (
 	clientStateShutdown
 )
 
+var envelopePool = sync.Pool{
+	New: func() interface{} {
+		return models.NewUnencryptedEmail()
+	},
+}
+
 // Session is created when the server has accepted the connection.
 // TODO: needs to create more security logic here, reputation, session timeout...
 type Session struct {
@@ -102,6 +109,8 @@ type Session struct {
 	tls bool
 	// eSMTP is true when client used EHLO protocol.
 	eSMTP bool
+
+	closed bool
 }
 
 // NewSession instantiates a new session
@@ -116,15 +125,15 @@ func NewSession(sessionID string, conn Connection) *Session {
 
 // close stops the session.
 func (c *Session) close() error {
+	c.closed = true
 	err := c.conn.Close()
-	c.conn = nil
-	return err
+	return errors.Wrap(err, "failed to close session connection")
 }
 
 // isAlive check if the connection is still active,
 // critical for leaving session routine.
 func (c *Session) isAlive() bool {
-	return c.conn != nil
+	return !c.closed
 }
 
 // startSession creates a new routine for handling client inputs.
@@ -139,18 +148,23 @@ func (c *Session) startSession(s *Server) {
 			c.parseCMD(s)
 		case clientStateData:
 			if err := c.readData(); err != nil {
+				logrus.Error("failed to parse session data", err)
 				c.conn.AddBuffer(fmt.Sprintf(errInvalidEmail, err))
-			} else {
-				c.conn.AddBuffer(responseOK)
+				c.close()
+				return
 			}
+
+			c.state = clientStateCMD
+			c.conn.AddBuffer(responseOK)
+
 			c.resetTransaction()
+			c.state = clientStateCMD
 
 		case clientStateShutdown:
 			return
 		}
 
 		if err := c.conn.Flush(); err != nil {
-			logrus.Error(err)
 			return
 		}
 	}
@@ -159,13 +173,31 @@ func (c *Session) startSession(s *Server) {
 // readData is a handler for the clientData state.
 // it parses the envelope from the client.
 func (c *Session) readData() error {
-	const maxSize = 25 * MB
-	_, err := enmime.ReadEnvelope(c.conn.ReadEnvelope(maxSize))
+	// return envelope to the pool
+	defer envelopePool.Put(c.envelope)
+
+	logrus.Info("receiving envelope")
+
+	buf, err := c.conn.ReadEnvelope()
 	if err != nil {
-		c.conn.AddBuffer(fmt.Sprintf(errInvalidEmail, err))
-		c.resetTransaction()
+		logrus.Infof("error receiving envelope: %s", err)
 		return err
 	}
+
+	if buf == nil {
+		return nil
+	}
+
+	env, err := enmime.ReadEnvelope(buf)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse data")
+	}
+
+	if len(env.Errors) > 0 {
+		return errors.New("invalid envelope")
+	}
+
+	logrus.Info("envelope processed")
 	// Do something with the envelope ;)
 	return nil
 }
@@ -187,7 +219,6 @@ func (c *Session) parseCMD(s *Server) {
 	const maxLineSize = 512
 	line, err := c.conn.ReadLine()
 	if err != nil {
-		logrus.Error(line, err)
 		c.close()
 		return
 	}
@@ -214,17 +245,17 @@ func (c *Session) parseCMD(s *Server) {
 			c.conn.AddBuffer(errNestedEmail)
 			break
 		}
-
 		buf := line[len(cmdMAIL):]
-		addr, err := parseEmail(buf)
+		addr, err := parseEmailAddress(buf)
 		if err != nil {
 			c.conn.AddBuffer(fmt.Sprintf(errInvalidEmail, err))
 			break
 		}
 
-		c.envelope = &models.UnencryptedEmail{
-			From: *addr,
-		}
+		envelope := envelopePool.Get().(*models.UnencryptedEmail)
+		envelope.From = *addr
+
+		c.envelope = envelope
 		c.conn.AddBuffer(responseOK)
 	case cmdRCPT.match(line):
 		const maxRecipients = 100
@@ -234,9 +265,14 @@ func (c *Session) parseCMD(s *Server) {
 		}
 
 		buf := line[len(cmdRCPT):]
-		addr, err := parseEmail(buf)
+		addr, err := parseEmailAddress(buf)
 		if err != nil {
 			c.conn.AddBuffer(fmt.Sprintf(errInvalidEmail, err))
+			break
+		}
+
+		if addr.Domain() != s.c.Hostname {
+			c.conn.AddBuffer(fmt.Sprintf(errInvalidEmail, "email outside system domain"))
 			break
 		}
 
@@ -258,6 +294,10 @@ func (c *Session) parseCMD(s *Server) {
 		}
 		c.resetTransaction()
 	case cmdDATA.match(line):
+		if !c.inTransaction() {
+			c.conn.AddBuffer(fmt.Sprintf(errInvalidEmail, "not in transaction"))
+			break
+		}
 		if len(c.envelope.ToList) == 0 {
 			c.conn.AddBuffer(fmt.Sprintf(errInvalidEmail, "no recipients"))
 			break
@@ -272,10 +312,10 @@ func (c *Session) parseCMD(s *Server) {
 	}
 }
 
-// parseEmail parses <email@example.com> to models.Address.
+// parseEmailAddress parses <email@example.com> to models.Address.
 //
 // TODO: maybe should be in domain?
-func parseEmail(buf []byte) (*models.Address, error) {
+func parseEmailAddress(buf []byte) (*models.Address, error) {
 	size := len(buf)
 	if size < 4 || size > 253 {
 		return nil, errors.New("address size must be between 4 and 253")

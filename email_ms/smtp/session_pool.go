@@ -52,10 +52,7 @@ func NewSessionPool(ctx context.Context, c *PoolConfig) *SessionPool {
 func (p *SessionPool) HandleConnection(c net.Conn, s *Server) {
 	p.sem <- true
 	sessionID := uuid.NewString()
-	client, err := p.addSession(c, sessionID)
-	if err != nil {
-		return
-	}
+	client := p.addSession(c, sessionID)
 	go func() {
 		client.startSession(s)
 		p.closeSession(client, sessionID)
@@ -63,11 +60,11 @@ func (p *SessionPool) HandleConnection(c net.Conn, s *Server) {
 }
 
 // addSession is when the semaphore allows one more session to the pool.
-func (p *SessionPool) addSession(c net.Conn, key string) (*Session, error) {
+func (p *SessionPool) addSession(c net.Conn, key string) *Session {
 	p.wg.Add(1)
 	client := NewSession(key, NewConnection(p.ctx, c, p.config.timeout))
 	p.activeSessions.Store(key, client)
-	return client, nil
+	return client
 }
 
 // closeSession is used when the connection is closed and the session is ending.

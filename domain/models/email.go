@@ -7,6 +7,13 @@ import (
 	"github.com/sonalys/letterme/domain/cryptography"
 )
 
+const (
+	_         = iota             // ignore first value by assigning to blank identifier
+	KB uint32 = 1 << (10 * iota) // 1 << (10*1)
+	MB                           // 1 << (10*2)
+	GB                           // 1 << (10*3)
+)
+
 // UnencryptedEmail is used to receive/send emails from/to outside letter.me,
 // It contains decrypted content, and should be encrypted immediately after processing.
 //
@@ -17,6 +24,15 @@ type UnencryptedEmail struct {
 	Attachments [][]byte  `json:"attachments"`
 	Title       []byte    `json:"title"`
 	Body        []byte    `json:"body"`
+}
+
+// NewUnencryptedEmail is used by sync.Pool to pre-allocate envelopes.
+func NewUnencryptedEmail() *UnencryptedEmail {
+	return &UnencryptedEmail{
+		Body:   make([]byte, 0, 1*MB),
+		Title:  make([]byte, 0, 1*KB),
+		ToList: make([]Address, 0, 10),
+	}
 }
 
 // InternalEmailRequest is used to receive a partially encrypted email request from api users,

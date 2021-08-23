@@ -2,11 +2,22 @@ package smtp
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	mailyak "github.com/domodwyer/mailyak/v3"
 	"github.com/stretchr/testify/require"
 )
+
+func boilerplateMail() *mailyak.MailYak {
+	mail := mailyak.New("localhost:2526", nil)
+	mail.From("a@localhost")
+	mail.FromName("Bananas for Friends")
+	mail.To("b@localhost")
+	mail.Subject("Business proposition")
+	mail.Plain().Set("my beautiful email")
+	return mail
+}
 
 func Test_Server(t *testing.T) {
 	ctx := context.Background()
@@ -15,23 +26,35 @@ func Test_Server(t *testing.T) {
 	require.NotNil(t, sv)
 
 	defer sv.Shutdown()
-	go func() {
-		require.NoError(t, sv.Listen())
-	}()
+	go sv.Listen()
 
-	mail := mailyak.New("localhost:2526", nil)
+	t.Run("invalid from", func(t *testing.T) {
+		mail := boilerplateMail()
+		mail.From("bananas")
+		require.Error(t, mail.Send(), "should return error")
+	})
 
-	mail.From("a@localhost")
-	mail.To("b@localhost")
-	mail.FromName("Bananas for Friends")
+	t.Run("invalid to", func(t *testing.T) {
+		mail := boilerplateMail()
+		mail.To("bananas")
+		require.Error(t, mail.Send(), "should return error")
+	})
 
-	mail.Subject("Business proposition")
-	mail.Plain().Set("123")
-	//mail.Plain().Set("my beautiful email")
-	// file, err := os.Open("server.go")
-	// require.NoError(t, err)
-	// mail.Attach("server.go", file)
+	t.Run("recipient outside domain", func(t *testing.T) {
+		mail := boilerplateMail()
+		mail.To("bananas@gmail.com")
+		require.Error(t, mail.Send(), "should return error")
+	})
 
-	// mail.Send()
-	require.NoError(t, mail.Send())
+	t.Run("second recipient outside domain", func(t *testing.T) {
+		mail := boilerplateMail()
+		mail.To(fmt.Sprintf("alysson@%s", sv.c.Hostname), "bananas@gmail.com")
+		require.Error(t, mail.Send(), "should return error")
+	})
+
+	// TODO: test tls upgrade
+	t.Run("email size is too big", func(t *testing.T) {
+		// mail := boilerplateMail()
+		// require.Error(t, mail.Send(), "should return error")
+	})
 }

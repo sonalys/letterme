@@ -5,10 +5,11 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/tls"
-	"errors"
+	"fmt"
 	"net"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/sonalys/letterme/domain/cryptography"
 	"github.com/sonalys/letterme/domain/utils"
@@ -27,28 +28,36 @@ const ServerConfigEnv = "LM_SMTP_CONFIG"
 
 // ServerConfig are the dependencies for the server to start.
 type ServerConfig struct {
-	MaxClients uint                    `json:"max_clients"`
-	Timeout    time.Duration           `json:"timeout"`
-	PrivateKey cryptography.PrivateKey `json:"private_key"`
-	Hostname   string                  `json:"hostname"`
+	MaxClients    uint                    `json:"max_clients"`
+	MaxRecipients uint                    `json:"max_recipients"`
+	MaxEmailSize  uint32                  `json:"max_email_size"`
+	Timeout       time.Duration           `json:"timeout"`
+	PrivateKey    cryptography.PrivateKey `json:"private_key"`
+	Hostname      string                  `json:"hostname"`
 }
 
 // Validate implements the validatable interface.
 func (c ServerConfig) Validate() error {
+	var errList []error
+
 	if c.MaxClients == 0 {
-		return errors.New("invalid max_clients value")
+		errList = append(errList, newInvalidFieldErr("max_clients"))
 	}
 
 	if c.Timeout == 0 {
-		return errors.New("invalid timeout value")
+		errList = append(errList, newInvalidFieldErr("timeout"))
 	}
 
 	if c.PrivateKey.D == nil {
-		return errors.New("invalid private_key value")
+		errList = append(errList, newInvalidFieldErr("private_key"))
 	}
 
 	if c.Hostname == "" {
-		return errors.New("invalid hostname")
+		errList = append(errList, newInvalidFieldErr("hostname"))
+	}
+
+	if len(errList) > 0 {
+		return newInvalidConfigErr(errList)
 	}
 	return nil
 }
@@ -78,16 +87,17 @@ func NewServer(ctx context.Context, c *ServerConfig) (*Server, error) {
 func InitServerFromEnv(ctx context.Context) (*Server, error) {
 	cfg := new(ServerConfig)
 	if err := utils.LoadFromEnv(ServerConfigEnv, cfg); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to initialize server")
 	}
 	return NewServer(ctx, cfg)
 }
 
 // Listen starts to accept new connections.
 func (s *Server) Listen() error {
-	listener, err := net.Listen("tcp", "localhost:2526")
+	addr := "localhost:2526"
+	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("failed to listen to %s", addr))
 	}
 
 	s.listener = listener
@@ -101,7 +111,7 @@ func (s *Server) Listen() error {
 				s.pool.Shutdown()
 				return nil
 			}
-			logrus.Error(err)
+			logrus.Error("failed to accept new tcp connection", err)
 			continue
 		}
 		s.pool.HandleConnection(conn, s)
