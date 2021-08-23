@@ -15,5 +15,6 @@ func main() {
 		panic(err)
 	}
 
-	utils.GracefulShutdown(cancel)
+	<-utils.GracefulShutdown()
+	cancel()
 }

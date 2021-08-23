@@ -15,12 +15,12 @@ var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z
 // does not guarantee that the provided email domain exists.
 func (m Address) Validate() error {
 	length := len(m)
-	if length < 3 || length > 254 {
+	if length < 4 || length > 253 {
 		return newInvalidTypeError("address", string(m), errors.New("length must be between 4 and 253"))
 	}
 
 	if isValid := emailRegex.MatchString(string(m)); !isValid {
-		return newInvalidTypeError("address", string(m), errors.New("value is not an email"))
+		return newInvalidTypeError("address", string(m), errors.New("value is not valid"))
 	}
 	return nil
 }
