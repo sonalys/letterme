@@ -1,4 +1,5 @@
 # Spam Firewall
+
 This microservice is responsible for identifying blacklisted emails, reported external virus or scam links received through unencrypted channels or sha-512 from attachments.
 
 It will have an indexed collection of strings, which will be the email address, the external link or the sha-512 from attachments, if present, it will set a flag for spam.

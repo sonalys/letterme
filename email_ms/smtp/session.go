@@ -223,6 +223,8 @@ func (c *Session) parseCMD(s *Server) {
 		return
 	}
 
+	logrus.Info(string(line))
+
 	switch {
 	case cmdHELO.match(line):
 		c.resetTransaction()
@@ -234,7 +236,7 @@ func (c *Session) parseCMD(s *Server) {
 			fmt.Sprintf(messageEHLO, s.c.Hostname),
 			fmt.Sprintf(messageSize, maxLineSize),
 			messagePipelining,
-			// advertiseTLS, // disabled in debug because we don't have any certificate
+			messageAdvertiseTLS, // disabled in debug because we don't have any certificate
 			messageEnhance,
 			messageHelp,
 		)
@@ -287,7 +289,7 @@ func (c *Session) parseCMD(s *Server) {
 	case cmdSTARTTLS.match(line):
 		// TODO: fix this, should fetch cert from server config.
 		// We need to check if the client also uses a digital certificate, we don't want to receive emails from untrusted entities.
-		if err := c.conn.UpgradeTLS(nil); err == nil {
+		if err := c.conn.UpgradeTLS(s.tls); err == nil {
 			c.tls = true
 		} else {
 			logrus.Info(err)

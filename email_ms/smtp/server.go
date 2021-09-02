@@ -11,7 +11,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/sonalys/letterme/domain/cryptography"
 	"github.com/sonalys/letterme/domain/utils"
 )
 
@@ -19,6 +18,7 @@ import (
 type Server struct {
 	ctx      context.Context
 	c        *ServerConfig
+	tls      *tls.Config
 	pool     SessionManager
 	listener net.Listener
 }
@@ -28,12 +28,13 @@ const ServerConfigEnv = "LM_SMTP_CONFIG"
 
 // ServerConfig are the dependencies for the server to start.
 type ServerConfig struct {
-	MaxClients    uint                    `json:"max_clients"`
-	MaxRecipients uint                    `json:"max_recipients"`
-	MaxEmailSize  uint32                  `json:"max_email_size"`
-	Timeout       time.Duration           `json:"timeout"`
-	PrivateKey    cryptography.PrivateKey `json:"private_key"`
-	Hostname      string                  `json:"hostname"`
+	MaxClients     uint          `json:"max_clients"`
+	MaxRecipients  uint          `json:"max_recipients"`
+	MaxEmailSize   uint32        `json:"max_email_size"`
+	Timeout        time.Duration `json:"timeout"`
+	CertificateKey string        `json:"certificate_key"`
+	Certificate    string        `json:"certificate"`
+	Hostname       string        `json:"hostname"`
 }
 
 // Validate implements the validatable interface.
@@ -48,8 +49,12 @@ func (c ServerConfig) Validate() error {
 		errList = append(errList, newInvalidFieldErr("timeout"))
 	}
 
-	if c.PrivateKey.D == nil {
-		errList = append(errList, newInvalidFieldErr("private_key"))
+	if len(c.CertificateKey) == 0 {
+		errList = append(errList, newInvalidFieldErr("certificate_key"))
+	}
+
+	if len(c.Certificate) == 0 {
+		errList = append(errList, newInvalidFieldErr("certificate"))
 	}
 
 	if c.Hostname == "" {
@@ -64,19 +69,16 @@ func (c ServerConfig) Validate() error {
 
 // NewServer instantiates a new server.
 func NewServer(ctx context.Context, c *ServerConfig) (*Server, error) {
+	tlsConfig, err := loadTLS(c)
+	if err != nil {
+		return nil, newInitializeServerErr(err)
+	}
+
 	return &Server{
 		c:   c,
 		ctx: ctx,
+		tls: tlsConfig,
 		pool: NewSessionPool(ctx, &PoolConfig{
-			tlsConfig: tls.Config{
-				Rand:       rand.Reader,
-				ClientAuth: tls.VerifyClientCertIfGiven,
-				ServerName: c.Hostname,
-				// TODO: fix this shit, should load from cert file.
-				Certificates: []tls.Certificate{
-					{PrivateKey: c.PrivateKey},
-				},
-			},
 			capacity: c.MaxClients,
 			timeout:  c.Timeout,
 		}),
@@ -90,6 +92,21 @@ func InitServerFromEnv(ctx context.Context) (*Server, error) {
 		return nil, errors.Wrap(err, "failed to initialize server")
 	}
 	return NewServer(ctx, cfg)
+}
+
+func loadTLS(c *ServerConfig) (*tls.Config, error) {
+	// TODO: improve this
+	certificate, err := tls.X509KeyPair([]byte(c.Certificate), []byte(c.CertificateKey))
+	if err != nil {
+		return nil, newInvalidCertificateErr(err)
+	}
+
+	return &tls.Config{
+		Rand:         rand.Reader,
+		Certificates: []tls.Certificate{certificate},
+		ClientAuth:   tls.VerifyClientCertIfGiven,
+		ServerName:   c.Hostname,
+	}, nil
 }
 
 // Listen starts to accept new connections.

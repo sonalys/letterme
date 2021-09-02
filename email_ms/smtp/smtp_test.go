@@ -1,6 +1,9 @@
 package smtp
 
+// SMTP_TEST is an integration test for utilizing the server's interface to send mocked emails.
+
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"testing"
@@ -9,21 +12,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func boilerplateMail() *mailyak.MailYak {
-	mail := mailyak.New("localhost:2526", nil)
-	mail.From("a@localhost")
-	mail.FromName("Bananas for Friends")
-	mail.To("b@localhost")
-	mail.Subject("Business proposition")
-	mail.Plain().Set("my beautiful email")
-	return mail
-}
-
-func Test_Server(t *testing.T) {
+func Test_SMTPServer(t *testing.T) {
 	ctx := context.Background()
 	sv, err := InitServerFromEnv(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, sv)
+
+	boilerplateMail := func() *mailyak.MailYak {
+		mail, err := mailyak.NewWithTLS("localhost:2526", nil, sv.tls)
+		require.NoError(t, err)
+		mail.From("a@localhost")
+		mail.FromName("Bananas for Friends")
+		mail.To("b@localhost")
+		mail.Subject("Business proposition")
+		mail.Plain().Set("my beautiful email")
+		return mail
+	}
 
 	defer sv.Shutdown()
 	go sv.Listen()
@@ -52,9 +56,11 @@ func Test_Server(t *testing.T) {
 		require.Error(t, mail.Send(), "should return error")
 	})
 
-	// TODO: test tls upgrade
 	t.Run("email size is too big", func(t *testing.T) {
-		// mail := boilerplateMail()
-		// require.Error(t, mail.Send(), "should return error")
+		mail := boilerplateMail()
+
+		reader := bytes.NewReader(make([]byte, 30*MB))
+		mail.AttachInline("big_attachment_30mb", reader)
+		require.Error(t, mail.Send(), "should return error")
 	})
 }

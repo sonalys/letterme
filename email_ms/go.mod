@@ -8,6 +8,7 @@ require (
 	github.com/domodwyer/mailyak/v3 v3.3.3
 	github.com/google/uuid v1.3.0
 	github.com/jhillyerd/enmime v0.9.2
+	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/sonalys/letterme/domain v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.6.1
@@ -23,7 +24,6 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/mattn/go-runewidth v0.0.12 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect

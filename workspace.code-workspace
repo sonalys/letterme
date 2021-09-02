@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "email_ms"
+		},
+		{
+			"path": "account_ms"
+		},
+		{
+			"path": "domain"
+		}
+	],
+	"settings": {}
+}

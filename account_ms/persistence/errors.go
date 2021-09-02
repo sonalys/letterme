@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	errInvalidConfiguration = "invalid mongo configuration: %#v"
+	errInvalidConfiguration = "invalid mongo configuration: %v"
 	errInstance             = "failed to create mongo instance"
 	errConnect              = "failed to connect to mongo"
 	errNotFound             = "no documents were found"

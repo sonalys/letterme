@@ -26,7 +26,7 @@ func (s *Service) ResetPublicKey(ctx context.Context, req models.ResetPublicKeyR
 	if count, err := col.Update(ctx, queryFilter, updateFilter); err != nil {
 		return newAccountOperationError("reset", err)
 	} else if count != 1 {
-		logrus.Errorf("resetPublicKey filtered %d results, should be exactly 1, filter: %#v", count, queryFilter)
+		logrus.Errorf("resetPublicKey filtered %d results, should be exactly 1, filter: %v", count, queryFilter)
 	}
 
 	return nil

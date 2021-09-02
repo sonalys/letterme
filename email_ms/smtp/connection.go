@@ -36,20 +36,24 @@ type ConnectionAdapter struct {
 }
 
 // NewConnection instantiates a new connection controller.
-func NewConnection(ctx context.Context, c net.Conn, timeout time.Duration) Connection {
-	return &ConnectionAdapter{
+func NewConnection(ctx context.Context, c net.Conn, timeout time.Duration, tls *tls.Config) Connection {
+	conn := &ConnectionAdapter{
 		ctx:     ctx,
 		conn:    c,
 		bufout:  bufio.NewWriter(c),
 		bufin:   bufio.NewReader(c),
 		timeout: timeout,
 	}
+	// try to upgrade to tls, doesn't matter if it fails.
+	conn.UpgradeTLS(tls)
+	return conn
 }
 
 // UpgradeTLS upgrades the socket connection with tls encryption.
 func (c *ConnectionAdapter) UpgradeTLS(config *tls.Config) error {
 	// wrap c.conn in a new TLS server side connection
 	tlsConn := tls.Server(c.conn, config)
+
 	// Call handshake here to get any handshake error before reading starts
 	err := tlsConn.Handshake()
 	if err != nil {
