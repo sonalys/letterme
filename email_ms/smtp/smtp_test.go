@@ -19,7 +19,7 @@ func Test_SMTPServer(t *testing.T) {
 	require.NotNil(t, sv)
 
 	boilerplateMail := func() *mailyak.MailYak {
-		mail, err := mailyak.NewWithTLS("localhost:2526", nil, sv.tls)
+		mail, err := mailyak.NewWithTLS(sv.c.Address, nil, sv.tls)
 		require.NoError(t, err)
 		mail.From("a@localhost")
 		mail.FromName("Bananas for Friends")

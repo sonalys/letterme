@@ -35,6 +35,7 @@ type ServerConfig struct {
 	CertificateKey string        `json:"certificate_key"`
 	Certificate    string        `json:"certificate"`
 	Hostname       string        `json:"hostname"`
+	Address        string        `json:"address"`
 }
 
 // Validate implements the validatable interface.
@@ -59,6 +60,10 @@ func (c ServerConfig) Validate() error {
 
 	if c.Hostname == "" {
 		errList = append(errList, newInvalidFieldErr("hostname"))
+	}
+
+	if c.Address == "" {
+		errList = append(errList, newInvalidFieldErr("address"))
 	}
 
 	if len(errList) > 0 {
@@ -111,10 +116,9 @@ func loadTLS(c *ServerConfig) (*tls.Config, error) {
 
 // Listen starts to accept new connections.
 func (s *Server) Listen() error {
-	addr := "localhost:2526"
-	listener, err := net.Listen("tcp", addr)
+	listener, err := net.Listen("tcp", s.c.Address)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to listen to %s", addr))
+		return errors.Wrap(err, fmt.Sprintf("failed to listen to %s", s.c.Address))
 	}
 
 	s.listener = listener
