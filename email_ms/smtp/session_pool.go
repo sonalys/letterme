@@ -12,65 +12,62 @@ import (
 
 // SessionManager is the signature required to manage all server sessions.
 type SessionManager interface {
-	HandleConnection(c net.Conn, s *Server)
+	AddSession(c net.Conn) (*Session, error)
+	CloseSession(c *Session)
 	Shutdown() <-chan bool
 }
 
 // SessionPool manages all the active sessions.
 type SessionPool struct {
-	ctx context.Context
-	// sem is a semaphore used to control max active sessions.
-	sem chan bool
-	// activeSessions are all the active sessions.
+	wg             sync.WaitGroup
+	sem            chan bool
+	ctx            context.Context
+	config         *PoolConfig
 	activeSessions sync.Map
-	// wg is used to wait for all the sessions to finish before shutting down.
-	wg sync.WaitGroup
-	// config is used to hold all config data.
-	config *PoolConfig
 }
 
 // PoolConfig are the configurations required to initialize the SessionPool
 type PoolConfig struct {
-	tlsConfig *tls.Config
-	capacity  uint
 	timeout   time.Duration
+	capacity  uint
+	hostname  string
+	tlsConfig *tls.Config
 }
 
 // NewSessionPool instantiates a new connection pool.
 func NewSessionPool(ctx context.Context, c *PoolConfig) *SessionPool {
 	pool := &SessionPool{
+		wg:             sync.WaitGroup{},
+		sem:            make(chan bool, c.capacity),
 		ctx:            ctx,
 		config:         c,
-		sem:            make(chan bool, c.capacity),
 		activeSessions: sync.Map{},
-		wg:             sync.WaitGroup{},
 	}
 	return pool
 }
 
-// HandleConnection receives a TCP connection and manages a new session.
-func (p *SessionPool) HandleConnection(c net.Conn, s *Server) {
-	p.sem <- true
-	sessionID := uuid.NewString()
-	client := p.addSession(c, sessionID)
-	go func() {
-		client.startSession(s)
-		p.closeSession(client, sessionID)
-	}()
-}
-
 // addSession is when the semaphore allows one more session to the pool.
-func (p *SessionPool) addSession(c net.Conn, key string) *Session {
+func (p *SessionPool) AddSession(c net.Conn) (*Session, error) {
+	p.sem <- true
 	p.wg.Add(1)
-	client := NewSession(key, NewConnection(p.ctx, c, p.config.timeout, p.config.tlsConfig))
-	p.activeSessions.Store(key, client)
-	return client
+	sessionID := uuid.NewString()
+
+	// As following SMTP, we don't want to start any connection already encrypted,
+	// the client has to request the upgrade himself.
+	conn, err := NewConnection(p.ctx, c, p.config.timeout, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client := NewSession(sessionID, conn)
+	p.activeSessions.Store(sessionID, client)
+	return client, nil
 }
 
 // closeSession is used when the connection is closed and the session is ending.
-func (p *SessionPool) closeSession(c *Session, key string) {
+func (p *SessionPool) CloseSession(c *Session) {
 	c.close()
-	p.activeSessions.Delete(key)
+	p.activeSessions.Delete(c.sessionID)
 	p.wg.Done()
 	<-p.sem
 }

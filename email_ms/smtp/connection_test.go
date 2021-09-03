@@ -3,6 +3,7 @@ package smtp
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"io"
 	"net"
@@ -16,21 +17,41 @@ import (
 
 func Test_NewConnection(t *testing.T) {
 	ctx := context.Background()
-	conn := NewConnection(ctx, &net.TCPConn{}, time.Hour, nil)
+	conn, err := NewConnection(ctx, &net.TCPConn{}, time.Hour, nil)
+	require.NoError(t, err)
 	require.NotNil(t, conn)
 }
 
+func newTestCertificate(t *testing.T, c *ServerConfig) *tls.Config {
+	pool := x509.NewCertPool()
+	ok := pool.AppendCertsFromPEM([]byte(c.Certificate))
+	require.True(t, ok)
+
+	cert, err := tls.X509KeyPair([]byte(c.Certificate), []byte(c.CertificateKey))
+	require.NoError(t, err)
+
+	return &tls.Config{
+		// certificate used as from server.
+		RootCAs: pool,
+		// certificate representing client.
+		Certificates:       []tls.Certificate{cert},
+		ServerName:         c.Hostname,
+		InsecureSkipVerify: true,
+	}
+}
+
 func Test_ConnectionUpgradeTLS(t *testing.T) {
+	ctx := context.Background()
 	cfg := new(ServerConfig)
+	timeout := 5 * time.Second
+
 	err := utils.LoadFromEnv(ServerConfigEnv, cfg)
 	require.NoError(t, err, "should load config from env")
 
-	tlsConfig, err := loadTLS(cfg)
+	serverTLS, err := loadTLS(cfg)
 	require.NoError(t, err, "should initialize server config")
-	// We won't use real certificate here.
-	tlsConfig.InsecureSkipVerify = true
-	// We can't verify self-signed client certificates here.
-	tlsConfig.ClientAuth = tls.RequireAnyClientCert
+	// We can't generate valid certificates during test.
+	serverTLS.ClientAuth = tls.RequireAnyClientCert
 
 	sv, err := net.Listen("tcp", ":1234")
 	require.NoError(t, err, "should initialize tls server")
@@ -44,18 +65,25 @@ func Test_ConnectionUpgradeTLS(t *testing.T) {
 		conn, err := sv.Accept()
 		require.NoError(t, err)
 
-		c := ConnectionAdapter{conn: conn}
+		encrypted, err := NewConnection(ctx, conn, timeout, serverTLS)
+		require.NoError(t, err, "should upgrade server conn to tls")
 
-		require.NoError(t, c.UpgradeTLS(tlsConfig))
-		require.True(t, c.TLS)
+		encrypted.AddBuffer("123")
+		err = encrypted.Flush()
+		require.NoError(t, err)
 	}()
 
-	conn, err := net.Dial("tcp", ":1234")
-	require.NoError(t, err)
-	require.NotNil(t, conn)
+	// We can't verify a certificate's origin during tests.
+	serverTLS.InsecureSkipVerify = true
 
-	_, err = conn.Write([]byte("lol"))
+	unencryptedClient, err := tls.Dial("tcp", ":1234", serverTLS)
 	require.NoError(t, err)
+	require.NotNil(t, unencryptedClient)
+
+	buf := make([]byte, 1024)
+	bytesRead, err := unencryptedClient.Read(buf)
+	require.NoError(t, err)
+	require.Equal(t, []byte("123\r\n"), buf[:bytesRead], "encrypted message should read correctly")
 
 	wg.Wait()
 }
@@ -112,7 +140,8 @@ func Test_ConnectionReadLine(t *testing.T) {
 		conn, err := sv.Accept()
 		require.NoError(t, err)
 
-		c := NewConnection(ctx, conn, time.Hour, nil)
+		c, err := NewConnection(ctx, conn, time.Hour, nil)
+		require.NoError(t, err)
 		line, err := c.ReadLine()
 		require.NoError(t, err)
 		require.Equal(t, expLine[:len(expLine)-2], line)
@@ -149,7 +178,8 @@ func Test_ConnectionReadBytes(t *testing.T) {
 		conn, err := sv.Accept()
 		require.NoError(t, err)
 
-		c := NewConnection(ctx, conn, time.Hour, nil)
+		c, err := NewConnection(ctx, conn, time.Hour, nil)
+		require.NoError(t, err)
 		line, err := c.ReadBytes('\t')
 		require.NoError(t, err)
 		require.Equal(t, []byte("one"), line)
@@ -205,7 +235,8 @@ func Test_ConnectionReadEnvelope(t *testing.T) {
 				require.NoError(t, err)
 				defer conn.Close()
 
-				c := NewConnection(ctx, conn, time.Hour, nil)
+				c, err := NewConnection(ctx, conn, time.Hour, nil)
+				require.NoError(t, err)
 
 				out, err := c.ReadEnvelope()
 				if tC.expectedError == nil {
@@ -259,7 +290,8 @@ func Test_ConnectionAddBuffer(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, conn)
 
-		c := NewConnection(ctx, conn, time.Hour, nil)
+		c, err := NewConnection(ctx, conn, time.Hour, nil)
+		require.NoError(t, err)
 
 		c.AddBuffer([]byte("world"))
 		c.AddBuffer("hello", []byte("world"))
@@ -286,7 +318,6 @@ func Test_ConnectionAddBuffer(t *testing.T) {
 		got = append(got, buffer[:bytesRead]...)
 	}
 
-	expected := []byte("helloworld\r\n")
+	expected := []byte("hello\r\nworld\r\n")
 	require.Equal(t, expected, got)
-
 }

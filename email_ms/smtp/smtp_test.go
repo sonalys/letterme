@@ -5,6 +5,7 @@ package smtp
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
 	"testing"
 
@@ -18,6 +19,10 @@ func Test_SMTPServer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, sv)
 
+	// We can't generate valid certificates during test.
+	sv.tls.ClientAuth = tls.RequireAnyClientCert
+	sv.tls.InsecureSkipVerify = true
+
 	boilerplateMail := func(t *testing.T) *mailyak.MailYak {
 		mail, err := mailyak.NewWithTLS(sv.c.Address, nil, sv.tls)
 		require.NoError(t, err)
@@ -25,7 +30,7 @@ func Test_SMTPServer(t *testing.T) {
 		mail.FromName("Bananas for Friends")
 		mail.To("b@localhost")
 		mail.Subject("Business proposition")
-		mail.Plain().Set("my beautiful email")
+		mail.Plain().Set("Fruits are delicious")
 		return mail
 	}
 

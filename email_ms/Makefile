@@ -22,4 +22,4 @@ ci:
 
 gen:
 	rm -rf ./mocks/*.go
-	mockery --dir ./interfaces/ --all --case underscore --disable-version-string
+	mockery --dir ./smtp/ --all --case underscore --disable-version-string

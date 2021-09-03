@@ -11,16 +11,18 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/sonalys/letterme/domain/models"
 	"github.com/sonalys/letterme/domain/utils"
 )
 
 // Server is the administrator for all receiving connections.
 type Server struct {
-	ctx      context.Context
-	c        *ServerConfig
-	tls      *tls.Config
-	pool     SessionManager
-	listener net.Listener
+	c              *ServerConfig
+	tls            *tls.Config
+	ctx            context.Context
+	pool           SessionManager
+	listener       net.Listener
+	cachedMessages [][]byte
 }
 
 // ServerConfigEnv defines the env name for server's configuration.
@@ -28,14 +30,14 @@ const ServerConfigEnv = "LM_SMTP_CONFIG"
 
 // ServerConfig are the dependencies for the server to start.
 type ServerConfig struct {
-	MaxClients     uint          `json:"max_clients"`
-	MaxRecipients  uint          `json:"max_recipients"`
-	MaxEmailSize   uint32        `json:"max_email_size"`
 	Timeout        time.Duration `json:"timeout"`
-	CertificateKey string        `json:"certificate_key"`
-	Certificate    string        `json:"certificate"`
-	Hostname       string        `json:"hostname"`
 	Address        string        `json:"address"`
+	Hostname       string        `json:"hostname"`
+	MaxClients     uint          `json:"max_clients"`
+	Certificate    string        `json:"certificate"`
+	MaxEmailSize   uint32        `json:"max_email_size"`
+	MaxRecipients  uint          `json:"max_recipients"`
+	CertificateKey string        `json:"certificate_key"`
 }
 
 // Validate implements the validatable interface.
@@ -79,16 +81,20 @@ func NewServer(ctx context.Context, c *ServerConfig) (*Server, error) {
 		return nil, newInitializeServerErr(err)
 	}
 
-	return &Server{
+	server := &Server{
 		c:   c,
 		ctx: ctx,
 		tls: tlsConfig,
 		pool: NewSessionPool(ctx, &PoolConfig{
+			hostname:  c.Hostname,
 			capacity:  c.MaxClients,
 			timeout:   c.Timeout,
 			tlsConfig: tlsConfig,
 		}),
-	}, nil
+	}
+
+	server.cacheMessages()
+	return server, nil
 }
 
 // InitServerFromEnv loads all the configs from env and starts the server.
@@ -101,7 +107,6 @@ func InitServerFromEnv(ctx context.Context) (*Server, error) {
 }
 
 func loadTLS(c *ServerConfig) (*tls.Config, error) {
-	// TODO: improve this
 	certificate, err := tls.X509KeyPair([]byte(c.Certificate), []byte(c.CertificateKey))
 	if err != nil {
 		return nil, newInvalidCertificateErr(err)
@@ -110,10 +115,9 @@ func loadTLS(c *ServerConfig) (*tls.Config, error) {
 	return &tls.Config{
 		Rand:         rand.Reader,
 		Certificates: []tls.Certificate{certificate},
-		// tls.RequireAndVerifyClientCert is critical for the security of this server
-		// we don't want anyone impersonating gmail, yahoo, etc.
+		// If you change this I will fucking kill you,
+		// we need to be sure that every provider using this SMTP is verified.
 		ClientAuth: tls.RequireAndVerifyClientCert,
-		ServerName: c.Hostname,
 	}, nil
 }
 
@@ -138,7 +142,14 @@ func (s *Server) Listen() error {
 			logrus.Error("failed to accept new tcp connection", err)
 			continue
 		}
-		s.pool.HandleConnection(conn, s)
+		// Session pool ensures there's a slot for this connection.
+		session, err := s.pool.AddSession(conn)
+		if err != nil {
+			logrus.Error("failed to create session: ", err)
+		} else {
+			// After ensuring the slot, we can create a routine to handle it.
+			go s.handleSession(session)
+		}
 	}
 }
 
@@ -148,5 +159,147 @@ func (s *Server) Shutdown() {
 	if s.listener != nil {
 		_ = s.listener.Close()
 		<-s.pool.Shutdown()
+	}
+}
+
+func (s *Server) handleSession(session *Session) {
+	defer s.pool.CloseSession(session)
+	cache := s.cachedMessages
+
+	for session.isAlive() {
+		switch session.state {
+		case clientStateGreeting:
+			session.state = clientStateCMD
+			session.Send(cache[mGreet])
+		case clientStateCMD:
+			s.handleCommand(session)
+		case clientStateData:
+			if err := session.readData(); err != nil {
+				logrus.Error("failed to parse session data", err)
+				session.Send(cache[mErrInvalidEmail])
+				return
+			}
+
+			session.state = clientStateCMD
+			session.resetTransaction()
+			session.Send(cache[mOK])
+		}
+	}
+}
+
+func (s *Server) handleCommand(session *Session) {
+	cache := s.cachedMessages
+	line, err := session.ReadLine()
+	if err != nil {
+		session.close()
+		return
+	}
+
+	switch {
+	case cmdHELO.match(line):
+		session.resetTransaction()
+		session.Send(cache[mHELO])
+	case cmdEHLO.match(line):
+		session.resetTransaction()
+		session.Send(
+			cache[mEHLO],
+			cache[mSize],
+			cache[mPipeline],
+			cache[mTLS],
+			cache[mEnhance],
+			cache[mHelp],
+		)
+	case cmdHELP.match(line):
+		session.Send(cache[mOK])
+	case cmdMAIL.match(line):
+		if session.inTransaction() {
+			session.Send(cache[mErrTransaction])
+			break
+		}
+		buf := line[len(cmdMAIL):]
+		addr, err := parseEmailAddress(buf)
+		if err != nil {
+			session.Send(cache[mErrInvalidEmail])
+			break
+		}
+
+		envelope := envelopePool.Get().(*models.UnencryptedEmail)
+		envelope.From = *addr
+
+		session.envelope = envelope
+		session.Send(cache[mOK])
+	case cmdRCPT.match(line):
+		const maxRecipients = 100
+		if len(session.envelope.ToList) > maxRecipients {
+			session.Send(cache[mErrTooManyRecipients])
+			break
+		}
+
+		buf := line[len(cmdRCPT):]
+		addr, err := parseEmailAddress(buf)
+		if err != nil {
+			session.Send(cache[mErrInvalidEmail])
+			break
+		}
+
+		if addr.Domain() != s.c.Hostname {
+			session.Send(cache[mErrInvalidEmail])
+			break
+		}
+
+		session.envelope.ToList = append(session.envelope.ToList, *addr)
+		session.Send(cache[mOK])
+	case cmdRSET.match(line):
+		session.resetTransaction()
+		session.Send(cache[mOK])
+	case cmdQUIT.match(line):
+		session.Send(cache[mOK])
+		session.close()
+	case cmdSTARTTLS.match(line):
+		// TODO: fix this, should fetch cert from server config.
+		// We need to check if the client also uses a digital certificate, we don't want to receive emails from untrusted entities.
+		if err := session.conn.UpgradeTLS(s.tls); err == nil {
+			session.tls = true
+		} else {
+			logrus.Info(err)
+		}
+		session.resetTransaction()
+	case cmdDATA.match(line):
+		if !session.inTransaction() {
+			session.Send(cache[mErrTransaction])
+			break
+		}
+		if len(session.envelope.ToList) == 0 {
+			session.Send(cache[mErrNoRecipients])
+			break
+		}
+		session.Send(cache[mReady])
+		session.state = clientStateData
+	case cmdNOOP.match(line):
+		session.Send(cache[mOK])
+	case cmdVRFY.match(line):
+		// We don't reveal what addresses we have or not, for privacy reasons.
+		session.Send(cache[mOK])
+	}
+}
+
+// cacheMessages cache all messages so we don't have to build strings during runtime.
+func (s *Server) cacheMessages() {
+	s.cachedMessages = [][]byte{
+		[]byte(fmt.Sprintf("220 %s Greetings", s.c.Hostname)),
+		[]byte(fmt.Sprintf("250 %s Hello", s.c.Hostname)),
+		[]byte(fmt.Sprintf("250-%s Hello", s.c.Hostname)),
+		[]byte("250-STARTTLS"),
+		[]byte(fmt.Sprintf("250-SIZE %d", maxEnvelopeDataSize)),
+		[]byte("250-PIPELINING"),
+		[]byte("250-ENHANCEDSTATUSCODES"),
+		[]byte("250 HELP"),
+		[]byte("250 OK"),
+		[]byte("354 READY"),
+		[]byte("503 ALREADY IN TRANSACTION"),
+		[]byte("552 EMAIL IS TOO BIG"),
+		[]byte("552 EMAIL IS INVALID"),
+		[]byte("552 NO RECIPIENTS"),
+		[]byte("552 TOO MANY RECIPIENTS"),
 	}
 }

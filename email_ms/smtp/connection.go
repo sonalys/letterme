@@ -38,7 +38,7 @@ type ConnectionAdapter struct {
 }
 
 // NewConnection instantiates a new connection controller.
-func NewConnection(ctx context.Context, c net.Conn, timeout time.Duration, tls *tls.Config) Connection {
+func NewConnection(ctx context.Context, c net.Conn, timeout time.Duration, tls *tls.Config) (Connection, error) {
 	conn := &ConnectionAdapter{
 		ctx:     ctx,
 		conn:    c,
@@ -48,19 +48,26 @@ func NewConnection(ctx context.Context, c net.Conn, timeout time.Duration, tls *
 	}
 	if tls != nil {
 		// try to upgrade to tls, doesn't matter if it fails.
-		conn.UpgradeTLS(tls)
+		if err := conn.UpgradeTLS(tls); err != nil {
+			return nil, err
+		}
 	}
 	conn.SetDeadline(timeout)
-	return conn
+	return conn, nil
 }
 
 // UpgradeTLS upgrades the socket connection with tls encryption.
 func (c *ConnectionAdapter) UpgradeTLS(config *tls.Config) error {
 	// wrap c.conn in a new TLS server side connection
-	tlsConn := tls.Server(c.conn, config)
+	conn := tls.Server(c.conn, config)
+	conn.SetDeadline(time.Now().Add(c.timeout))
+
+	if err := conn.Handshake(); err != nil {
+		return err
+	}
 
 	c.TLS = true
-	c.conn = tlsConn
+	c.conn = conn
 	return nil
 }
 
@@ -93,18 +100,10 @@ func (c *ConnectionAdapter) ReadBytes(delim byte) ([]byte, error) {
 // maxEnvelopeDataSize oh yes, hardcoded value, 25 MB per envelope buffer
 const maxEnvelopeDataSize = 25 * MB
 
-// bufferPool pre-allocates buffers for parsing envelopes.
-var bufferPool = sync.Pool{
-	New: func() interface{} {
-		buf := make([]byte, MB)
-		return &buf
-	},
-}
-
 // outputPool pre-allocates buffers for parsing envelopes.
 var outputPool = sync.Pool{
 	New: func() interface{} {
-		buf := make([]byte, 0, 25*MB)
+		buf := make([]byte, maxEnvelopeDataSize)
 		return &buf
 	},
 }
@@ -112,31 +111,33 @@ var outputPool = sync.Pool{
 // ReadEnvelope parses the upcoming data buffer.
 func (c *ConnectionAdapter) ReadEnvelope() (reader io.Reader, err error) {
 	// We allocate 1 buffer of 25 MB for the whole envelope
-	// We allocate 1 buffer of 1 KB to gradually read the tcp conn.
-	// TODO: use only 1 buffer to do it all.
-	output := bytes.NewBuffer(*outputPool.Get().(*[]byte))
-	buf := bufferPool.Get().(*[]byte)
+	buffer := *outputPool.Get().(*[]byte)
+
 	var size uint32
-	defer bufferPool.Put(buf)
+	var endOffset uint32
 
 	for {
-		n, err := c.conn.Read(*buf)
+		endOffset = size + MB
+		if int(size+MB) > len(buffer) {
+			endOffset = maxEnvelopeDataSize
+		}
+
+		bytesRead, err := c.conn.Read(buffer[size:endOffset])
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				return reader, nil
+				return nil, err
 			}
 			c.Close()
-			return reader, err
+			return nil, err
+		}
+		size = size + uint32(bytesRead)
+
+		if bytes.Equal(buffer[size-3:size-1], []byte{'.', '\r'}) {
+			return bytes.NewBuffer(buffer[:size]), nil
 		}
 
-		size = size + uint32(n)
-		if size > maxEnvelopeDataSize {
-			return reader, errors.New("too big")
-		}
-
-		output.Write((*buf)[:n])
-		if n > 3 && bytes.Equal((*buf)[n-3:n-1], []byte{'.', '\r'}) {
-			return output, nil
+		if bytesRead == 0 {
+			return nil, errors.New("too big")
 		}
 	}
 }
@@ -147,21 +148,24 @@ func (c *ConnectionAdapter) AddBuffer(data ...interface{}) {
 	for _, buf := range data {
 		switch value := buf.(type) {
 		case string:
+			logrus.Info("send: ", value)
 			_, err := c.bufout.WriteString(value)
 			if err != nil {
 				logrus.Error(err)
 			}
 		case []byte:
+			logrus.Info("send: ", string(value))
 			_, err := c.bufout.Write(value)
 			if err != nil {
 				logrus.Error(err)
 			}
 		default:
 			logrus.Errorf("failed to send session type %T", value)
+			return
 		}
+		// Adds \r\n automatically at the end because smtp protocol requires it.
+		_, _ = c.bufout.WriteString("\r\n")
 	}
-	// Adds \r\n automatically at the end because smtp protocol requires it.
-	_, _ = c.bufout.WriteString("\r\n")
 }
 
 // Flush sends all buffered data at once for session client.
