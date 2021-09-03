@@ -77,7 +77,7 @@ func (c *ConnectionAdapter) ReadLine() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return bytes.Trim(buf, "\r"), nil
+	return bytes.TrimRight(buf, "\r"), nil
 }
 
 // ReadBytes reads the buffer until it reaches the first 'delim' byte.
@@ -96,7 +96,7 @@ const maxEnvelopeDataSize = 25 * MB
 // bufferPool pre-allocates buffers for parsing envelopes.
 var bufferPool = sync.Pool{
 	New: func() interface{} {
-		buf := make([]byte, KB)
+		buf := make([]byte, MB)
 		return &buf
 	},
 }
@@ -134,10 +134,10 @@ func (c *ConnectionAdapter) ReadEnvelope() (reader io.Reader, err error) {
 			return reader, errors.New("too big")
 		}
 
-		if n > 3 && bytes.Equal((*buf)[n-3:n-1], []byte{'.', '\r'}) {
-			return reader, nil
-		}
 		output.Write((*buf)[:n])
+		if n > 3 && bytes.Equal((*buf)[n-3:n-1], []byte{'.', '\r'}) {
+			return output, nil
+		}
 	}
 }
 
@@ -160,7 +160,7 @@ func (c *ConnectionAdapter) AddBuffer(data ...interface{}) {
 			logrus.Errorf("failed to send session type %T", value)
 		}
 	}
-
+	// Adds \r\n automatically at the end because smtp protocol requires it.
 	_, _ = c.bufout.WriteString("\r\n")
 }
 

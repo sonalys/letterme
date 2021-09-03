@@ -88,6 +88,7 @@ const (
 	clientStateShutdown
 )
 
+// envelopePool is a buffer pool to avoid memory allocation.
 var envelopePool = sync.Pool{
 	New: func() interface{} {
 		return models.NewUnencryptedEmail()
@@ -176,8 +177,6 @@ func (c *Session) readData() error {
 	// return envelope to the pool
 	defer envelopePool.Put(c.envelope)
 
-	logrus.Info("receiving envelope")
-
 	buf, err := c.conn.ReadEnvelope()
 	if err != nil {
 		logrus.Infof("error receiving envelope: %s", err)
@@ -197,7 +196,6 @@ func (c *Session) readData() error {
 		return errors.New("invalid envelope")
 	}
 
-	logrus.Info("envelope processed")
 	// Do something with the envelope ;)
 	return nil
 }

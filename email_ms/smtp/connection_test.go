@@ -3,6 +3,8 @@ package smtp
 import (
 	"context"
 	"crypto/tls"
+	"errors"
+	"io"
 	"net"
 	"sync"
 	"testing"
@@ -161,4 +163,130 @@ func Test_ConnectionReadBytes(t *testing.T) {
 	require.NoError(t, err)
 
 	wg.Wait()
+}
+
+func Test_ConnectionReadEnvelope(t *testing.T) {
+	ctx := context.Background()
+	sv, err := net.Listen("tcp", ":1234")
+	require.NoError(t, err, "should initialize tls server")
+	defer sv.Close()
+
+	type testCase struct {
+		name           string
+		dataToSend     []byte
+		expectedBuffer []byte
+		expectedError  error
+	}
+
+	testList := []testCase{
+		{
+			name:           "envelope too big",
+			dataToSend:     make([]byte, maxEnvelopeDataSize+1),
+			expectedBuffer: nil,
+			expectedError:  errors.New("too big"),
+		},
+		{
+			name:           "all ok",
+			dataToSend:     []byte("hello world\r\n.\r\n"),
+			expectedBuffer: []byte("hello world\r\n.\r\n"),
+			expectedError:  nil,
+		},
+	}
+
+	for _, tC := range testList {
+		t.Run(tC.name, func(t *testing.T) {
+			var wg sync.WaitGroup
+
+			go func() {
+				defer wg.Done()
+				wg.Add(1)
+
+				conn, err := sv.Accept()
+				require.NoError(t, err)
+				defer conn.Close()
+
+				c := NewConnection(ctx, conn, time.Hour, nil)
+
+				out, err := c.ReadEnvelope()
+				if tC.expectedError == nil {
+					require.NoError(t, err)
+					require.NotNil(t, out)
+				} else {
+					require.EqualError(t, err, tC.expectedError.Error())
+					return
+				}
+
+				gotBytes, err := io.ReadAll(out)
+				require.NoError(t, err)
+
+				if tC.expectedBuffer != nil {
+					require.Equal(t, tC.expectedBuffer, gotBytes)
+				}
+			}()
+
+			conn, err := net.Dial("tcp", ":1234")
+			require.NoError(t, err)
+			require.NotNil(t, conn)
+
+			size := len(tC.dataToSend)
+			step := 4096
+
+			for startOffset := 0; startOffset < size; startOffset += step {
+				endOffset := startOffset + step
+				if endOffset > size {
+					endOffset = size
+				}
+
+				_, err := conn.Write(tC.dataToSend[startOffset : startOffset+endOffset])
+				if err != nil {
+					break
+				}
+			}
+
+			wg.Wait()
+		})
+	}
+}
+
+func Test_ConnectionAddBuffer(t *testing.T) {
+	ctx := context.Background()
+	sv, err := net.Listen("tcp", ":1234")
+	require.NoError(t, err, "should initialize tls server")
+	defer sv.Close()
+
+	go func() {
+		conn, err := sv.Accept()
+		require.NoError(t, err)
+		require.NotNil(t, conn)
+
+		c := NewConnection(ctx, conn, time.Hour, nil)
+
+		c.AddBuffer([]byte("world"))
+		c.AddBuffer("hello", []byte("world"))
+
+		err = c.Flush()
+		require.NoError(t, err)
+
+		c.Close()
+	}()
+
+	conn, err := net.Dial("tcp", ":1234")
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+
+	got := make([]byte, 0, 64)
+
+	for {
+		buffer := make([]byte, 4096)
+		bytesRead, err := conn.Read(buffer)
+		if err != nil {
+			break
+		}
+
+		got = append(got, buffer[:bytesRead]...)
+	}
+
+	expected := []byte("helloworld\r\n")
+	require.Equal(t, expected, got)
+
 }
