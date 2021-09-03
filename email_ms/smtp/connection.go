@@ -14,6 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Connection represents a TCP connection which can be insecure or encrypted.
 type Connection interface {
 	UpgradeTLS(config *tls.Config) error
 	ReadLine() ([]byte, error)
@@ -33,6 +34,7 @@ type ConnectionAdapter struct {
 	bufout  *bufio.Writer
 	bufin   *bufio.Reader
 	timeout time.Duration
+	TLS     bool
 }
 
 // NewConnection instantiates a new connection controller.
@@ -44,8 +46,11 @@ func NewConnection(ctx context.Context, c net.Conn, timeout time.Duration, tls *
 		bufin:   bufio.NewReader(c),
 		timeout: timeout,
 	}
-	// try to upgrade to tls, doesn't matter if it fails.
-	conn.UpgradeTLS(tls)
+	if tls != nil {
+		// try to upgrade to tls, doesn't matter if it fails.
+		conn.UpgradeTLS(tls)
+	}
+	conn.SetDeadline(timeout)
 	return conn
 }
 
@@ -60,6 +65,7 @@ func (c *ConnectionAdapter) UpgradeTLS(config *tls.Config) error {
 		return err
 	}
 
+	c.TLS = true
 	c.conn = tlsConn
 	return nil
 }
@@ -77,7 +83,7 @@ func (c *ConnectionAdapter) ReadLine() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return bytes.Trim(buf, "\r\n"), nil
+	return bytes.Trim(buf, "\r"), nil
 }
 
 // ReadBytes reads the buffer until it reaches the first 'delim' byte.
@@ -87,7 +93,7 @@ func (c *ConnectionAdapter) ReadBytes(delim byte) ([]byte, error) {
 		return nil, err
 	}
 	c.resetTimeout()
-	return buf, nil
+	return buf[:len(buf)-1], nil
 }
 
 // maxEnvelopeDataSize oh yes, hardcoded value, 25 MB per envelope buffer

@@ -18,7 +18,7 @@ func Test_SMTPServer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, sv)
 
-	boilerplateMail := func() *mailyak.MailYak {
+	boilerplateMail := func(t *testing.T) *mailyak.MailYak {
 		mail, err := mailyak.NewWithTLS(sv.c.Address, nil, sv.tls)
 		require.NoError(t, err)
 		mail.From("a@localhost")
@@ -33,31 +33,31 @@ func Test_SMTPServer(t *testing.T) {
 	go sv.Listen()
 
 	t.Run("invalid from", func(t *testing.T) {
-		mail := boilerplateMail()
+		mail := boilerplateMail(t)
 		mail.From("bananas")
 		require.Error(t, mail.Send(), "should return error")
 	})
 
 	t.Run("invalid to", func(t *testing.T) {
-		mail := boilerplateMail()
+		mail := boilerplateMail(t)
 		mail.To("bananas")
 		require.Error(t, mail.Send(), "should return error")
 	})
 
 	t.Run("recipient outside domain", func(t *testing.T) {
-		mail := boilerplateMail()
+		mail := boilerplateMail(t)
 		mail.To("bananas@gmail.com")
 		require.Error(t, mail.Send(), "should return error")
 	})
 
 	t.Run("second recipient outside domain", func(t *testing.T) {
-		mail := boilerplateMail()
+		mail := boilerplateMail(t)
 		mail.To(fmt.Sprintf("alysson@%s", sv.c.Hostname), "bananas@gmail.com")
 		require.Error(t, mail.Send(), "should return error")
 	})
 
 	t.Run("email size is too big", func(t *testing.T) {
-		mail := boilerplateMail()
+		mail := boilerplateMail(t)
 
 		reader := bytes.NewReader(make([]byte, 30*MB))
 		mail.AttachInline("big_attachment_30mb", reader)

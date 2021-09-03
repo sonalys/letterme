@@ -84,8 +84,9 @@ func NewServer(ctx context.Context, c *ServerConfig) (*Server, error) {
 		ctx: ctx,
 		tls: tlsConfig,
 		pool: NewSessionPool(ctx, &PoolConfig{
-			capacity: c.MaxClients,
-			timeout:  c.Timeout,
+			capacity:  c.MaxClients,
+			timeout:   c.Timeout,
+			tlsConfig: tlsConfig,
 		}),
 	}, nil
 }

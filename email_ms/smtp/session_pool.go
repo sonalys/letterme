@@ -31,7 +31,7 @@ type SessionPool struct {
 
 // PoolConfig are the configurations required to initialize the SessionPool
 type PoolConfig struct {
-	tlsConfig tls.Config
+	tlsConfig *tls.Config
 	capacity  uint
 	timeout   time.Duration
 }
@@ -62,7 +62,7 @@ func (p *SessionPool) HandleConnection(c net.Conn, s *Server) {
 // addSession is when the semaphore allows one more session to the pool.
 func (p *SessionPool) addSession(c net.Conn, key string) *Session {
 	p.wg.Add(1)
-	client := NewSession(key, NewConnection(p.ctx, c, p.config.timeout, &p.config.tlsConfig))
+	client := NewSession(key, NewConnection(p.ctx, c, p.config.timeout, p.config.tlsConfig))
 	p.activeSessions.Store(key, client)
 	return client
 }
