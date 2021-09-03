@@ -10,8 +10,9 @@ import (
 // AttachmentRequest is a structure that holds unencrypted information about attachments,
 // As soon as the processing phase is done, it will be encrypted into Attachment.
 type AttachmentRequest struct {
-	Attachment // heritages all fields from the Encrypted email, expect those redeclared below.
-	URL        `json:"url"`
+	Attachment        // heritages all fields from the Encrypted email, expect those redeclared below.
+	Buffer     []byte `json:"buffer"`
+	Filename   string `json:"name"`
 }
 
 // Encrypt implements encryptable interface.
@@ -28,10 +29,8 @@ func (m AttachmentRequest) Encrypt(r cryptography.CryptographicRouter, algorithm
 func (a AttachmentRequest) Validate() error {
 	var errMessages []error
 
-	if a.URL == "" {
-		errMessages = append(errMessages, newEmptyFieldError("url"))
-	} else if err := a.URL.Validate(); err != nil {
-		errMessages = append(errMessages, newInvalidTypeError("field", "url", err))
+	if len(a.Buffer) == 0 {
+		errMessages = append(errMessages, newEmptyFieldError("buffer"))
 	}
 
 	if len(errMessages) > 0 {
@@ -44,25 +43,18 @@ func (a AttachmentRequest) Validate() error {
 // All external images must be created on our side, one copy for each receiver
 // It will be deleted after TTL or readness confirmation.
 type Attachment struct {
-	// ID is only used by the database system. Do not use it inside code.
-	ID        DatabaseID `json:"id"`
-	EmailID   DatabaseID `json:"email_id"`
-	CreatedAt time.Time  `json:"created_at"`
-	// ValidUntil is a cached TTL date for the file deletion into the database,
-	// different users can have different ttl for their data.
-	ValidUntil time.Time `json:"valid_until"`
-
-	// URL is the link for this encrypted attachment on the storage provider.
-	URL cryptography.EncryptedBuffer `json:"url"`
-
-	// Size represents the attachment size in bytes.
-	Size     uint64   `json:"size"`
-	MimeType MimeType `json:"mime_type"`
-
-	// SHA512 is present when the file was sent decrypted, so we can calculate the checksum and verify for vulnerable files.
-	SHA512 *string `json:"sha512,omitempty"`
-	// Insecure flags attachments that were received without encryption.
-	Insecure bool `json:"insecure"`
+	ID          DatabaseID                   `json:"id"`
+	EmailID     DatabaseID                   `json:"email_id"`
+	CreatedAt   time.Time                    `json:"created_at"`
+	ValidUntil  time.Time                    `json:"valid_until"`
+	URL         cryptography.EncryptedBuffer `json:"url"`
+	Name        cryptography.EncryptedBuffer `json:"name"`
+	ContentID   string                       `json:"content_id"`
+	Disposition string                       `json:"content_disposition"`
+	Size        uint32                       `json:"size"`
+	MimeType    MimeType                     `json:"mime_type"`
+	SHA512      *string                      `json:"sha512,omitempty"`
+	Insecure    bool                         `json:"insecure"`
 }
 
 // Implements interface Validatable.

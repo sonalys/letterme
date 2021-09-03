@@ -15,6 +15,12 @@ import (
 	"github.com/sonalys/letterme/domain/utils"
 )
 
+// EnvelopeMiddleware is a middleware that can be chained and create a pipeline.
+type EnvelopeMiddleware func(next EnvelopeHandler) EnvelopeHandler
+
+// EnvelopeHandler is a handler that processes a pipeline.
+type EnvelopeHandler func(envelope *models.UnencryptedEmail) error
+
 // Server is the administrator for all receiving connections.
 type Server struct {
 	c              *ServerConfig
@@ -23,6 +29,7 @@ type Server struct {
 	pool           SessionManager
 	listener       net.Listener
 	cachedMessages [][]byte
+	handlers       []EnvelopeHandler
 }
 
 // ServerConfigEnv defines the env name for server's configuration.
@@ -82,9 +89,10 @@ func NewServer(ctx context.Context, c *ServerConfig) (*Server, error) {
 	}
 
 	server := &Server{
-		c:   c,
-		ctx: ctx,
-		tls: tlsConfig,
+		c:        c,
+		ctx:      ctx,
+		tls:      tlsConfig,
+		handlers: []EnvelopeHandler{},
 		pool: NewSessionPool(ctx, &PoolConfig{
 			hostname:  c.Hostname,
 			capacity:  c.MaxClients,
@@ -93,8 +101,15 @@ func NewServer(ctx context.Context, c *ServerConfig) (*Server, error) {
 		}),
 	}
 
+	server.handlers = append(server.handlers, server.endEnvelopeMiddleware())
 	server.cacheMessages()
 	return server, nil
+}
+
+// AddMiddleware adds a new middleware to the envelope pipeline.
+func (s *Server) AddMiddleware(middleware EnvelopeMiddleware) {
+	lastIndex := len(s.handlers) - 1
+	s.handlers = append(s.handlers, middleware(s.handlers[lastIndex]))
 }
 
 // InitServerFromEnv loads all the configs from env and starts the server.
@@ -162,6 +177,22 @@ func (s *Server) Shutdown() {
 	}
 }
 
+// endEnvelopeMiddleware disposes of the envelope memory allocation.
+func (s *Server) endEnvelopeMiddleware() EnvelopeHandler {
+	return func(envelope *models.UnencryptedEmail) error {
+		envelopePool.Put(envelope)
+		return nil
+	}
+}
+
+// startEnvelopePipeline process all the handlers for this envelope
+func (s *Server) startEnvelopePipeline(envelope *models.UnencryptedEmail) {
+	lastIndex := len(s.handlers) - 1
+	if err := s.handlers[lastIndex](envelope); err != nil {
+		logrus.Error("failed processing envelope pipeline: ", err)
+	}
+}
+
 func (s *Server) handleSession(session *Session) {
 	defer s.pool.CloseSession(session)
 	cache := s.cachedMessages
@@ -174,11 +205,13 @@ func (s *Server) handleSession(session *Session) {
 		case clientStateCMD:
 			s.handleCommand(session)
 		case clientStateData:
-			if err := session.readData(); err != nil {
+			if err := session.readEnvelope(); err != nil {
 				logrus.Error("failed to parse session data", err)
 				session.Send(cache[mErrInvalidEmail])
 				return
 			}
+
+			go s.startEnvelopePipeline(session.envelope)
 
 			session.state = clientStateCMD
 			session.resetTransaction()

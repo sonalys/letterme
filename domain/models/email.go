@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	_         = iota             // ignore first value by assigning to blank identifier
-	KB uint32 = 1 << (10 * iota) // 1 << (10*1)
-	MB                           // 1 << (10*2)
-	GB                           // 1 << (10*3)
+	_         = iota
+	KB uint32 = 1 << (10 * iota)
+	MB
+	GB
 )
 
 // UnencryptedEmail is used to receive/send emails from/to outside letter.me,
@@ -19,17 +19,20 @@ const (
 //
 // It needs to be processed first because it's encrypted using the public key of each recipient.
 type UnencryptedEmail struct {
-	From        Address   `json:"from"`
-	ToList      []Address `json:"to_list"`
-	Attachments [][]byte  `json:"attachments"`
-	Title       []byte    `json:"title"`
-	Body        []byte    `json:"body"`
+	From        Address             `json:"from"`
+	ToList      []Address           `json:"to_list"`
+	Attachments []AttachmentRequest `json:"attachments"`
+	Inlines     []AttachmentRequest `json:"inlines"`
+	Title       []byte              `json:"title"`
+	Text        []byte              `json:"text"`
+	HTML        []byte              `json:"html"`
 }
 
 // NewUnencryptedEmail is used by sync.Pool to pre-allocate envelopes.
 func NewUnencryptedEmail() *UnencryptedEmail {
 	return &UnencryptedEmail{
-		Body:   make([]byte, 0, 1*MB),
+		Text:   make([]byte, 0, 1*KB),
+		HTML:   make([]byte, 0, 1*MB),
 		Title:  make([]byte, 0, 1*KB),
 		ToList: make([]Address, 0, 10),
 	}

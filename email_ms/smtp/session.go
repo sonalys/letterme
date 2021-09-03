@@ -74,12 +74,9 @@ func (c *Session) isAlive() bool {
 	return !c.closed
 }
 
-// readData is a handler for the clientData state.
+// readEnvelope is a handler for the clientData state.
 // it parses the envelope from the client.
-func (c *Session) readData() error {
-	// return envelope to the pool
-	defer envelopePool.Put(c.envelope)
-
+func (c *Session) readEnvelope() error {
 	buf, err := c.conn.ReadEnvelope()
 	if err != nil {
 		logrus.Infof("error receiving envelope: %s", err)
@@ -99,7 +96,37 @@ func (c *Session) readData() error {
 		return errors.New("invalid envelope")
 	}
 
-	// Do something with the envelope ;)
+	c.envelope.Text = []byte(env.Text)
+	c.envelope.HTML = []byte(env.HTML)
+
+	for _, attachment := range env.Attachments {
+		c.envelope.Attachments = append(c.envelope.Attachments, models.AttachmentRequest{
+			Buffer:   attachment.Content,
+			Filename: attachment.FileName,
+			Attachment: models.Attachment{
+				Size:        uint32(len(attachment.Content)),
+				MimeType:    models.MimeType(attachment.ContentType),
+				ContentID:   attachment.ContentID,
+				Disposition: attachment.Disposition,
+				Insecure:    true,
+			},
+		})
+	}
+
+	for _, inline := range env.Inlines {
+		c.envelope.Inlines = append(c.envelope.Inlines, models.AttachmentRequest{
+			Buffer:   inline.Content,
+			Filename: inline.FileName,
+			Attachment: models.Attachment{
+				Size:        uint32(len(inline.Content)),
+				MimeType:    models.MimeType(inline.ContentType),
+				ContentID:   inline.ContentID,
+				Disposition: inline.Disposition,
+				Insecure:    true,
+			},
+		})
+	}
+
 	return nil
 }
 
