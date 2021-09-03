@@ -25,10 +25,12 @@ func Test_ConnectionUpgradeTLS(t *testing.T) {
 
 	tlsConfig, err := loadTLS(cfg)
 	require.NoError(t, err, "should initialize server config")
-
+	// We won't use real certificate here.
 	tlsConfig.InsecureSkipVerify = true
+	// We can't verify self-signed client certificates here.
+	tlsConfig.ClientAuth = tls.RequireAnyClientCert
 
-	sv, err := tls.Listen("tcp", "localhost:1234", tlsConfig)
+	sv, err := net.Listen("tcp", ":1234")
 	require.NoError(t, err, "should initialize tls server")
 	defer sv.Close()
 
@@ -46,9 +48,12 @@ func Test_ConnectionUpgradeTLS(t *testing.T) {
 		require.True(t, c.TLS)
 	}()
 
-	conn, err := tls.Dial("tcp", "localhost:1234", tlsConfig)
+	conn, err := net.Dial("tcp", ":1234")
 	require.NoError(t, err)
 	require.NotNil(t, conn)
+
+	_, err = conn.Write([]byte("lol"))
+	require.NoError(t, err)
 
 	wg.Wait()
 }

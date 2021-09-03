@@ -110,8 +110,10 @@ func loadTLS(c *ServerConfig) (*tls.Config, error) {
 	return &tls.Config{
 		Rand:         rand.Reader,
 		Certificates: []tls.Certificate{certificate},
-		ClientAuth:   tls.VerifyClientCertIfGiven,
-		ServerName:   c.Hostname,
+		// tls.RequireAndVerifyClientCert is critical for the security of this server
+		// we don't want anyone impersonating gmail, yahoo, etc.
+		ClientAuth: tls.RequireAndVerifyClientCert,
+		ServerName: c.Hostname,
 	}, nil
 }
 

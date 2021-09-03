@@ -59,12 +59,6 @@ func (c *ConnectionAdapter) UpgradeTLS(config *tls.Config) error {
 	// wrap c.conn in a new TLS server side connection
 	tlsConn := tls.Server(c.conn, config)
 
-	// Call handshake here to get any handshake error before reading starts
-	err := tlsConn.Handshake()
-	if err != nil {
-		return err
-	}
-
 	c.TLS = true
 	c.conn = tlsConn
 	return nil
