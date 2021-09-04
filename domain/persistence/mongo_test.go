@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sonalys/letterme/account_ms/utils"
 	dModels "github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/domain/utils"
 	"github.com/stretchr/testify/require"
 )
 

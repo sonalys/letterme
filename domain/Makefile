@@ -1,4 +1,6 @@
 #!make
+include ../local.env
+export
 
 test:
 	go test ./... -race -failfast -covermode=atomic -coverprofile=coverage.out \
@@ -10,3 +12,7 @@ lint:
 ci:
 	make test
 	make lint
+
+gen:
+	rm -rf ./mocks/*.go
+	mockery --dir ./interfaces/ --all --case underscore --disable-version-string

@@ -99,7 +99,7 @@ func NewServer(ctx context.Context, c *ServerConfig) (*Server, error) {
 	return server, nil
 }
 
-// InitServerFromEnv loads all the configs from env and starts the server.
+// InitServerFromEnv loads all the configs from env, doesn't start the server.
 func InitServerFromEnv(ctx context.Context) (*Server, error) {
 	cfg := new(ServerConfig)
 	if err := utils.LoadFromEnv(ServerConfigEnv, cfg); err != nil {
@@ -281,11 +281,7 @@ func (s *Server) handleCommand(session *Session) {
 		session.Send(cache[mOK])
 		session.close()
 	case cmdSTARTTLS.match(line):
-		// TODO: fix this, should fetch cert from server config.
-		// We need to check if the client also uses a digital certificate, we don't want to receive emails from untrusted entities.
-		if err := session.conn.UpgradeTLS(s.tls); err == nil {
-			session.tls = true
-		} else {
+		if err := session.UpgradeTLS(s.tls); err != nil {
 			logrus.Info(err)
 		}
 		session.resetTransaction()
@@ -304,6 +300,7 @@ func (s *Server) handleCommand(session *Session) {
 		session.Send(cache[mOK])
 	case cmdVRFY.match(line):
 		// We don't reveal what addresses we have or not, for privacy reasons.
+		// so we always return ok ( email exists )
 		session.Send(cache[mOK])
 	}
 }

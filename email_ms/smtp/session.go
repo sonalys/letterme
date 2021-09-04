@@ -1,6 +1,7 @@
 package smtp
 
 import (
+	"crypto/tls"
 	"sync"
 
 	"github.com/jhillyerd/enmime"
@@ -55,10 +56,20 @@ func (c *Session) Send(data ...interface{}) error {
 	return c.conn.Flush()
 }
 
+// ReadLine starts a buffer, and reads until the \r\n byte is found.
 func (c *Session) ReadLine() ([]byte, error) {
 	line, err := c.conn.ReadLine()
 	logrus.Info("received: ", string(line))
 	return line, err
+}
+
+// UpgradeTLS upgrades the session to encrypted.
+func (c *Session) UpgradeTLS(config *tls.Config) error {
+	err := c.conn.UpgradeTLS(config)
+	if err == nil {
+		c.tls = true
+	}
+	return err
 }
 
 // close stops the session.
