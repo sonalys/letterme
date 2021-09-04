@@ -60,7 +60,7 @@ func NewService(ctx context.Context, c *Configuration, d *Dependencies) (*Servic
 // InitializeFromEnv initializes the service from env variables.
 func InitializeFromEnv(ctx context.Context) (*Service, error) {
 	mongoConfig := new(mongo.Configuration)
-	if err := utils.LoadFromEnv(mongo.MongoEnv, mongoConfig); err != nil {
+	if err := utils.LoadFromEnv(mongo.ConfigEnv, mongoConfig); err != nil {
 		logrus.Panicf("failed to initialize mongoConfig from env: %s", err)
 	}
 	mongo, err := mongo.NewClient(ctx, mongoConfig)

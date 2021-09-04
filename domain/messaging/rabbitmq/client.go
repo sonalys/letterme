@@ -2,16 +2,19 @@ package rabbitmq
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/sonalys/letterme/domain/messaging"
+	"github.com/sonalys/letterme/domain/models"
 	"github.com/sonalys/letterme/domain/utils"
 	"github.com/streadway/amqp"
 )
 
-const RabbitEnv = "LM_RABBIQMQ_SETTINGS"
+const ConfigEnv = "LM_RABBIQMQ_SETTINGS"
 
 // Delivery is the encapsulation of the amqp.Delivery
 type Delivery = amqp.Delivery
@@ -24,8 +27,9 @@ type Channel = amqp.Channel
 
 // Client is an adapter for the rabbiqMQ
 type Client struct {
-	adapter *amqp.Connection
-	session *Channel
+	adapter   *amqp.Connection
+	session   *Channel
+	consumers sync.Map
 	*Configuration
 }
 
@@ -48,7 +52,7 @@ func NewClient(c *Configuration) (*Client, error) {
 
 func NewClientFromEnv() (*Client, error) {
 	config := new(Configuration)
-	if err := utils.LoadFromEnv(RabbitEnv, config); err != nil {
+	if err := utils.LoadFromEnv(ConfigEnv, config); err != nil {
 		return nil, errors.Wrap(err, errDialing)
 	}
 
@@ -126,7 +130,7 @@ func (c *Client) CreateQueue(name string) error {
 }
 
 // Publish sends a new message to the specified queue, the queue must already exist.
-func (c *Client) Publish(queue string, m messaging.Message) error {
+func (c *Client) Publish(queue string, m models.Message) error {
 	ch, err := c.getChannel()
 	if err != nil {
 		return err
@@ -134,13 +138,14 @@ func (c *Client) Publish(queue string, m messaging.Message) error {
 
 	if err := ch.Publish("", queue, false, false, transformMessageToRabbit(m)); err != nil {
 		_ = c.revalidateSession()
-		return errors.Wrap(err, errPublish)
+		return errors.Wrap(err, fmt.Sprintf(errPublish, queue))
 	}
 
 	return nil
 }
 
-func transformMessageToRabbit(m messaging.Message) amqp.Publishing {
+func transformMessageToRabbit(m models.Message) amqp.Publishing {
+	body, _ := json.Marshal(m.Body)
 	return amqp.Publishing{
 		Headers:         amqp.Table(m.Headers),
 		ContentType:     m.ContentType,
@@ -155,12 +160,12 @@ func transformMessageToRabbit(m messaging.Message) amqp.Publishing {
 		Type:            m.Type,
 		UserId:          m.UserId,
 		AppId:           m.AppId,
-		Body:            m.Body,
+		Body:            body,
 	}
 }
 
 // Consume allows you to specify a handler for a given queue, the queue must already exist.
-func (c *Client) Consume(ctx context.Context, queue string, handler messaging.DeliveryHandler) error {
+func (c *Client) Consume(ctx context.Context, queue string, handler models.DeliveryHandler) error {
 	ch, err := c.getChannel()
 	if err != nil {
 		return err
@@ -184,30 +189,6 @@ func (c *Client) Consume(ctx context.Context, queue string, handler messaging.De
 	return nil
 }
 
-func transformDeliveryFromRabbit(d Delivery) messaging.Delivery {
-	return messaging.Delivery{
-		Acknowledger: d.Acknowledger,
-		Message: messaging.Message{
-			Headers:         messaging.Table(d.Headers),
-			ContentType:     d.ContentType,
-			ContentEncoding: d.ContentEncoding,
-			DeliveryMode:    d.DeliveryMode,
-			Priority:        d.Priority,
-			CorrelationId:   d.CorrelationId,
-			ReplyTo:         d.ReplyTo,
-			Expiration:      d.Expiration,
-			MessageId:       d.MessageId,
-			Timestamp:       d.Timestamp,
-			Type:            d.Type,
-			UserId:          d.UserId,
-			AppId:           d.AppId,
-			Body:            d.Body,
-		},
-		ConsumerTag:  d.ConsumerTag,
-		MessageCount: d.MessageCount,
-		DeliveryTag:  d.DeliveryTag,
-		Redelivered:  d.Redelivered,
-		Exchange:     d.Exchange,
-		RoutingKey:   d.RoutingKey,
-	}
+func transformDeliveryFromRabbit(d Delivery) models.Delivery {
+	return models.NewDelivery(d)
 }

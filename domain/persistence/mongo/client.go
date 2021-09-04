@@ -11,8 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// MongoEnv is used to get configs from env.
-const MongoEnv = "LM_MONGO_SETTINGS"
+// ConfigEnv is used to get configs from env.
+const ConfigEnv = "LM_MONGO_SETTINGS"
 
 // Client is used to interface with persistence definitions.
 type Client struct {

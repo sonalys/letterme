@@ -5,7 +5,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/sonalys/letterme/domain/messaging"
+	"github.com/sonalys/letterme/domain/models"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,7 +42,7 @@ func Test_DeleteQueue(t *testing.T) {
 	err = client.DeleteQueue("test")
 	require.NoError(t, err, "recreating existent queue shouldn't give error")
 
-	err = client.Consume(ctx, "test", func(ctx context.Context, d messaging.Delivery) {})
+	err = client.Consume(ctx, "test", func(ctx context.Context, d models.Delivery) {})
 	require.Error(t, err, "should give error for deleted queue")
 }
 
@@ -51,24 +51,29 @@ func Test_PublishConsume(t *testing.T) {
 	client, err := NewClientFromEnv()
 	require.NoError(t, err)
 
-	defer deleteQueue(client, "test")
+	queueName := "test"
 
-	err = client.CreateQueue("test")
+	defer deleteQueue(client, queueName)
+
+	err = client.CreateQueue(queueName)
 	require.NoError(t, err, "should create a queue")
 
-	msg := messaging.Message{
+	msg := models.Message{
 		Body: []byte{1, 2, 3},
 	}
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	err = client.Consume(ctx, "test", func(ctx context.Context, d messaging.Delivery) {
+	err = client.Consume(ctx, queueName, func(ctx context.Context, d models.Delivery) {
 		defer wg.Done()
-		require.Equal(t, msg.Body, d.Body)
+		resp := new([]byte)
+		err := d.GetBody(resp)
+		require.NoError(t, err)
+		require.Equal(t, msg.Body, *resp)
 	})
 	require.NoError(t, err)
 
-	err = client.Publish("test", msg)
+	err = client.Publish(queueName, msg)
 	require.NoError(t, err, "publish in non-existent queue should create the queue")
 
 	wg.Wait()
