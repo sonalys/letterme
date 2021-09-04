@@ -15,12 +15,6 @@ import (
 	"github.com/sonalys/letterme/domain/utils"
 )
 
-// EnvelopeMiddleware is a middleware that can be chained and create a pipeline.
-type EnvelopeMiddleware func(next EnvelopeHandler) EnvelopeHandler
-
-// EnvelopeHandler is a handler that processes a pipeline.
-type EnvelopeHandler func(envelope *models.UnencryptedEmail) error
-
 // Server is the administrator for all receiving connections.
 type Server struct {
 	c              *ServerConfig
@@ -29,7 +23,7 @@ type Server struct {
 	pool           SessionManager
 	listener       net.Listener
 	cachedMessages [][]byte
-	handlers       []EnvelopeHandler
+	pipeline       Pipeline
 }
 
 // ServerConfigEnv defines the env name for server's configuration.
@@ -37,7 +31,6 @@ const ServerConfigEnv = "LM_SMTP_CONFIG"
 
 // ServerConfig are the dependencies for the server to start.
 type ServerConfig struct {
-	Timeout        time.Duration `json:"timeout"`
 	Address        string        `json:"address"`
 	Hostname       string        `json:"hostname"`
 	MaxClients     uint          `json:"max_clients"`
@@ -45,6 +38,7 @@ type ServerConfig struct {
 	MaxEmailSize   uint32        `json:"max_email_size"`
 	MaxRecipients  uint          `json:"max_recipients"`
 	CertificateKey string        `json:"certificate_key"`
+	SessionTimeout time.Duration `json:"timeout"`
 }
 
 // Validate implements the validatable interface.
@@ -55,7 +49,7 @@ func (c ServerConfig) Validate() error {
 		errList = append(errList, newInvalidFieldErr("max_clients"))
 	}
 
-	if c.Timeout == 0 {
+	if c.SessionTimeout == 0 {
 		errList = append(errList, newInvalidFieldErr("timeout"))
 	}
 
@@ -92,24 +86,17 @@ func NewServer(ctx context.Context, c *ServerConfig) (*Server, error) {
 		c:        c,
 		ctx:      ctx,
 		tls:      tlsConfig,
-		handlers: []EnvelopeHandler{},
+		pipeline: Pipeline{},
 		pool: NewSessionPool(ctx, &PoolConfig{
 			hostname:  c.Hostname,
 			capacity:  c.MaxClients,
-			timeout:   c.Timeout,
+			timeout:   c.SessionTimeout,
 			tlsConfig: tlsConfig,
 		}),
 	}
 
-	server.handlers = append(server.handlers, server.endEnvelopeMiddleware())
 	server.cacheMessages()
 	return server, nil
-}
-
-// AddMiddleware adds a new middleware to the envelope pipeline.
-func (s *Server) AddMiddleware(middleware EnvelopeMiddleware) {
-	lastIndex := len(s.handlers) - 1
-	s.handlers = append(s.handlers, middleware(s.handlers[lastIndex]))
 }
 
 // InitServerFromEnv loads all the configs from env and starts the server.
@@ -177,8 +164,14 @@ func (s *Server) Shutdown() {
 	}
 }
 
-// endEnvelopeMiddleware disposes of the envelope memory allocation.
-func (s *Server) endEnvelopeMiddleware() EnvelopeHandler {
+// AddMiddleware adds a new middleware to the envelope pipeline.
+func (s *Server) AddMiddlewares(middleware ...EnvelopeMiddleware) {
+	middlewares := append(middleware, releaseEnvelopeMiddleware)
+	s.pipeline.AddMiddlewares(middlewares...)
+}
+
+// releaseEnvelopeMiddleware releases the envelope from the heap pool.
+func releaseEnvelopeMiddleware(next EnvelopeHandler) EnvelopeHandler {
 	return func(envelope *models.UnencryptedEmail) error {
 		envelopePool.Put(envelope)
 		return nil
@@ -187,9 +180,8 @@ func (s *Server) endEnvelopeMiddleware() EnvelopeHandler {
 
 // startEnvelopePipeline process all the handlers for this envelope
 func (s *Server) startEnvelopePipeline(envelope *models.UnencryptedEmail) {
-	lastIndex := len(s.handlers) - 1
-	if err := s.handlers[lastIndex](envelope); err != nil {
-		logrus.Error("failed processing envelope pipeline: ", err)
+	if err := s.pipeline.Start(envelope); err != nil {
+		logrus.Error(err)
 	}
 }
 
