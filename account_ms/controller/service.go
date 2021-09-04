@@ -6,7 +6,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/sonalys/letterme/domain/interfaces"
-	"github.com/sonalys/letterme/domain/persistence"
+	"github.com/sonalys/letterme/domain/persistence/mongo"
 	"github.com/sonalys/letterme/domain/utils"
 
 	"github.com/sonalys/letterme/domain/cryptography"
@@ -59,11 +59,11 @@ func NewService(ctx context.Context, c *Configuration, d *Dependencies) (*Servic
 
 // InitializeFromEnv initializes the service from env variables.
 func InitializeFromEnv(ctx context.Context) (*Service, error) {
-	mongoConfig := new(persistence.Configuration)
-	if err := utils.LoadFromEnv(persistence.MongoEnv, mongoConfig); err != nil {
+	mongoConfig := new(mongo.Configuration)
+	if err := utils.LoadFromEnv(mongo.MongoEnv, mongoConfig); err != nil {
 		logrus.Panicf("failed to initialize mongoConfig from env: %s", err)
 	}
-	mongo, err := persistence.NewMongo(ctx, mongoConfig)
+	mongo, err := mongo.NewClient(ctx, mongoConfig)
 	if err != nil {
 		panic(err)
 	}

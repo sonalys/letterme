@@ -1,4 +1,4 @@
-package persistence
+package mongo
 
 import (
 	"context"
@@ -17,7 +17,7 @@ func Test_Mongo(t *testing.T) {
 		require.Fail(t, err.Error())
 	}
 
-	mongo, err := NewMongo(ctx, &cfg)
+	mongo, err := NewClient(ctx, &cfg)
 	require.NoError(t, err, "should create without errors")
 	require.NotNil(t, mongo, "mongo instance should exist")
 

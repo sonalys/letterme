@@ -1,0 +1,35 @@
+services:
+  rabbitmq:
+    container_name: lm_rabbitmq
+    restart: unless-stopped
+    image: rabbitmq:3.9-management
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+  mongo:
+    container_name: lm_mongo
+    restart: unless-stopped
+    image: mongo:5.0
+    ports:
+      - 27017:27017
+    volumes:
+      - db-data:/data/db
+      - mongo-config:/data/configdb
+
+  email_ms:
+    container_name: lm_email_ms
+    restart: unless-stopped
+    image: lm_email_ms
+    ports:
+      - 2526:2526
+    build:
+      context: email_ms
+      dockerfile: ../Dockerfile
+    # need to study on how to use this in production.
+    env_file:
+      - local.env
+
+volumes:
+  db-data:
+  mongo-config:

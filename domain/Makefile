@@ -2,6 +2,12 @@
 include ../local.env
 export
 
+start_mongo:
+	docker run --rm -d -p ${MONGO_PORT}:27017 --name letterme_mongo mongo:5.0
+
+start_rabbit:
+	docker run --rm -d -p 5672:5672 -p 15672:15672 --name rabbitmq rabbitmq:3.9-management
+
 test:
 	go test ./... -race -failfast -covermode=atomic -coverprofile=coverage.out \
 	-coverpkg=./cryptography/... ./...

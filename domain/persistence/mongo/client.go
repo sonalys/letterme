@@ -1,4 +1,4 @@
-package persistence
+package mongo
 
 import (
 	"context"
@@ -14,8 +14,8 @@ import (
 // MongoEnv is used to get configs from env.
 const MongoEnv = "LM_MONGO_SETTINGS"
 
-// Mongo is used to interface with persistence definitions.
-type Mongo struct {
+// Client is used to interface with persistence definitions.
+type Client struct {
 	ctx    context.Context
 	client *mongo.Database
 }
@@ -50,7 +50,7 @@ func (c Configuration) Validate() error {
 const sleepTimeSeconds = 5
 
 // Wait returns a chan that will return true when db is connected.
-func (m *Mongo) Wait() <-chan bool {
+func (m *Client) Wait() <-chan bool {
 	c := make(chan bool, 1)
 	defer func() {
 		for err := m.client.Client().Ping(m.ctx, nil); err != nil; {
@@ -67,9 +67,9 @@ func (m *Mongo) Wait() <-chan bool {
 	return c
 }
 
-// NewMongo creates a new mongo controller instance, validates given configurations
+// NewClient creates a new mongo controller instance, validates given configurations
 // and awaits for mongo to connect, blocking the thread.
-func NewMongo(ctx context.Context, c *Configuration) (*Mongo, error) {
+func NewClient(ctx context.Context, c *Configuration) (*Client, error) {
 	opts := options.Client().
 		SetAppName(c.SessionName).
 		SetHosts(c.Hosts)
@@ -87,14 +87,14 @@ func NewMongo(ctx context.Context, c *Configuration) (*Mongo, error) {
 		return nil, newConnectError(err)
 	}
 
-	return &Mongo{
+	return &Client{
 		ctx:    ctx,
 		client: client.Database(c.DBName),
 	}, nil
 }
 
 // CreateCollection creates a collection in mongo.
-func (m *Mongo) CreateCollection(colName string, indexes []map[string]interface{}) (interfaces.Collection, error) {
+func (m *Client) CreateCollection(colName string, indexes []map[string]interface{}) (interfaces.Collection, error) {
 	createOpts := options.Collection()
 	col := m.client.Collection(colName, createOpts)
 	mongoIndexes := convertGenericIndexesToMongo(indexes)
@@ -107,7 +107,7 @@ func (m *Mongo) CreateCollection(colName string, indexes []map[string]interface{
 }
 
 // DeleteCollection deletes a collection from mongo.
-func (m *Mongo) DeleteCollection(ctx context.Context, colName string) error {
+func (m *Client) DeleteCollection(ctx context.Context, colName string) error {
 	if err := m.client.Collection(colName).Drop(ctx); err != nil {
 		return newCollectionOperationError("delete", colName, err)
 	}
@@ -115,7 +115,7 @@ func (m *Mongo) DeleteCollection(ctx context.Context, colName string) error {
 }
 
 // GetCollection returns collection from mongo.
-func (m *Mongo) GetCollection(colName string) interfaces.Collection {
+func (m *Client) GetCollection(colName string) interfaces.Collection {
 	createOpts := options.Collection()
 	return &Collection{
 		Collection: m.client.Collection(colName, createOpts),

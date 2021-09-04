@@ -1,4 +1,4 @@
-package persistence
+package mongo
 
 import (
 	dModels "github.com/sonalys/letterme/domain/models"
