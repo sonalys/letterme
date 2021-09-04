@@ -69,6 +69,8 @@ func Test_convertGenericIndexesToMongo(t *testing.T) {
 
 		got := convertGenericIndexesToMongo(indexes)
 
-		require.EqualValues(t, expected, got)
+		for i := range expected {
+			require.EqualValues(t, expected[i], got[i])
+		}
 	})
 }
