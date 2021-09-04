@@ -23,9 +23,8 @@ jobs:
       with:
         mongodb-port: 2564
         mongodb-version: '5.0'
-    - uses: getong/rabbitmq-action@v1.2
-      with:
-        rabbitmq version: '3.9-management-alpine'
+    - name: setup rabbitmq
+      run: docker run --rm -d -p 5672:5672 -p 15672:15672 rabbitmq:3.9-management
     - name: install golangci-lint
       run: |
         curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.42.0
