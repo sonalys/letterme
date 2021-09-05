@@ -59,9 +59,12 @@ func initialize(ctx context.Context) {
 		ResponseTimeout: time.Second,
 	}
 
-	router := messaging.NewRouter(ctx, routerConfig, &messaging.Dependencies{
+	router, err := messaging.NewRouter(ctx, routerConfig, &messaging.Dependencies{
 		Messaging: rabbit,
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	controllerConfig := &controller.Configuration{}
 	svc, err := controller.NewService(ctx, controllerConfig, &controller.Dependencies{

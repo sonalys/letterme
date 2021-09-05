@@ -1,10 +1,12 @@
 package controller
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/sonalys/letterme/domain/mocks"
 	"github.com/sonalys/letterme/domain/models"
+	"github.com/stretchr/testify/mock"
 )
 
 func transformChannel(i chan models.Response) <-chan models.Response {
@@ -39,5 +41,13 @@ func runTest(t *testing.T, testList []testCase) {
 			}
 			tC.run(t, svc, &th)
 		})
+	}
+}
+
+func mockSetDST(index int, dstVal interface{}) func(mock.Arguments) {
+	return func(args mock.Arguments) {
+		argVal := args.Get(index)
+		dstVal := reflect.ValueOf(dstVal)
+		reflect.ValueOf(argVal).Elem().Set(dstVal)
 	}
 }

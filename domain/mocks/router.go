@@ -13,21 +13,19 @@ type Router struct {
 }
 
 // AddHandler provides a mock function with given fields: eventType, handler
-func (_m *Router) AddHandler(eventType string, handler models.DeliveryHandler) {
+func (_m *Router) AddHandler(eventType string, handler models.RouterHandler) {
 	_m.Called(eventType, handler)
 }
 
-// WaitResponse provides a mock function with given fields: id
-func (_m *Router) WaitResponse(id string) <-chan models.Response {
-	ret := _m.Called(id)
+// Communicate provides a mock function with given fields: queue, m, dst
+func (_m *Router) Communicate(queue string, m models.Message, dst interface{}) error {
+	ret := _m.Called(queue, m, dst)
 
-	var r0 <-chan models.Response
-	if rf, ok := ret.Get(0).(func(string) <-chan models.Response); ok {
-		r0 = rf(id)
+	var r0 error
+	if rf, ok := ret.Get(0).(func(string, models.Message, interface{}) error); ok {
+		r0 = rf(queue, m, dst)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(<-chan models.Response)
-		}
+		r0 = ret.Error(0)
 	}
 
 	return r0

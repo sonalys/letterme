@@ -178,12 +178,14 @@ func (c *Client) Consume(ctx context.Context, queue string, handler models.Deliv
 	}
 
 	go func() {
-		select {
-		case <-ctx.Done():
-			_ = ch.Close()
-			return
-		case delivery := <-recv:
-			handler(ctx, transformDeliveryFromRabbit(delivery))
+		for {
+			select {
+			case <-ctx.Done():
+				_ = ch.Close()
+				return
+			case delivery := <-recv:
+				handler(ctx, transformDeliveryFromRabbit(delivery))
+			}
 		}
 	}()
 	return nil

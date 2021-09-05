@@ -11,11 +11,25 @@ import (
 // DeliveryHandler is a handler func capable of managing deliveries.
 type DeliveryHandler func(ctx context.Context, d Delivery)
 
+type RouterHandler func(ctx context.Context, d Delivery) (interface{}, error)
+
 type Table map[string]interface{}
 
 type Response struct {
-	Message Delivery
-	Error   error
+	Resp  interface{}
+	Error string
+}
+
+func NewResponse(r interface{}, err error) Response {
+	resp := Response{
+		Resp: r,
+	}
+
+	if err != nil {
+		resp.Error = err.Error()
+	}
+
+	return resp
 }
 
 type PendingResponse struct {
