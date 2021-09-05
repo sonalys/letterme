@@ -12,6 +12,11 @@ type Router struct {
 	mock.Mock
 }
 
+// AddHandler provides a mock function with given fields: eventType, handler
+func (_m *Router) AddHandler(eventType string, handler models.DeliveryHandler) {
+	_m.Called(eventType, handler)
+}
+
 // WaitResponse provides a mock function with given fields: id
 func (_m *Router) WaitResponse(id string) <-chan models.Response {
 	ret := _m.Called(id)

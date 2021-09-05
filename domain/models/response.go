@@ -71,6 +71,12 @@ func (d Delivery) GetBody(dst interface{}) error {
 	return json.Unmarshal(d.body, dst)
 }
 
+func (d *Delivery) SetBody(src interface{}) error {
+	byt, err := json.Marshal(src)
+	d.body = byt
+	return err
+}
+
 func NewDelivery(d amqp.Delivery) Delivery {
 	return Delivery{
 		Acknowledger: d.Acknowledger,
