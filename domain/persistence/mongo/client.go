@@ -140,7 +140,7 @@ func (c *Collection) First(ctx context.Context, filter, dst interface{}) error {
 		}
 		return nil
 	case mongo.ErrNoDocuments:
-		return newOperationError("finding", newNotFoundError())
+		return newOperationError("finding", ErrNotFound)
 	default:
 		return newOperationError("finding", newCustomError(err))
 	}
@@ -158,7 +158,7 @@ func (c *Collection) List(ctx context.Context, filter, dst interface{}) error {
 		}
 		return nil
 	case mongo.ErrNoDocuments:
-		return newOperationError("listing", newNotFoundError())
+		return newOperationError("listing", ErrNotFound)
 	default:
 		return newOperationError("listing", newCustomError(err))
 	}

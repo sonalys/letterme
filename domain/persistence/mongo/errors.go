@@ -6,11 +6,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrNotFound = errors.New("no documents were found")
+)
+
 const (
 	errInvalidConfiguration = "invalid mongo configuration: %v"
 	errInstance             = "failed to create mongo instance"
 	errConnect              = "failed to connect to mongo"
-	errNotFound             = "no documents were found"
 	errCustom               = "database error"
 	errDecode               = "failed to decode result to dst"
 	errCast                 = "failed to cast from %T to %T"
@@ -37,10 +40,6 @@ func newConnectError(err error) error {
 
 func newCustomError(err error) error {
 	return errors.Wrap(err, errCustom)
-}
-
-func newNotFoundError() error {
-	return errors.New(errNotFound)
 }
 
 func newDecodeError(err error) error {

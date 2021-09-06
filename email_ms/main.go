@@ -57,6 +57,7 @@ func initialize(ctx context.Context) {
 	// TODO: fix the configuration here.
 	routerConfig := &messaging.Configuration{
 		ResponseTimeout: time.Second,
+		ResponseChannel: "email_ms",
 	}
 
 	router, err := messaging.NewRouter(ctx, routerConfig, &messaging.Dependencies{

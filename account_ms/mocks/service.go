@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	account_managermodels "github.com/sonalys/letterme/account_ms/models"
+	account_msmodels "github.com/sonalys/letterme/account_ms/models"
 
 	cryptography "github.com/sonalys/letterme/domain/cryptography"
 
@@ -66,18 +66,20 @@ func (_m *Service) Authenticate(ctx context.Context, Address models.Address) (*c
 }
 
 // CreateAccount provides a mock function with given fields: ctx, account
-func (_m *Service) CreateAccount(ctx context.Context, account account_managermodels.CreateAccountRequest) (cryptography.EncryptedBuffer, error) {
+func (_m *Service) CreateAccount(ctx context.Context, account account_msmodels.CreateAccountRequest) (*cryptography.EncryptedBuffer, error) {
 	ret := _m.Called(ctx, account)
 
-	var r0 cryptography.EncryptedBuffer
-	if rf, ok := ret.Get(0).(func(context.Context, account_managermodels.CreateAccountRequest) cryptography.EncryptedBuffer); ok {
+	var r0 *cryptography.EncryptedBuffer
+	if rf, ok := ret.Get(0).(func(context.Context, account_msmodels.CreateAccountRequest) *cryptography.EncryptedBuffer); ok {
 		r0 = rf(ctx, account)
 	} else {
-		r0 = ret.Get(0).(cryptography.EncryptedBuffer)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*cryptography.EncryptedBuffer)
+		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, account_managermodels.CreateAccountRequest) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, account_msmodels.CreateAccountRequest) error); ok {
 		r1 = rf(ctx, account)
 	} else {
 		r1 = ret.Error(1)
@@ -101,14 +103,16 @@ func (_m *Service) DeleteAccount(ctx context.Context, ownershipToken models.Owne
 }
 
 // GetAccount provides a mock function with given fields: ctx, ownershipToken
-func (_m *Service) GetAccount(ctx context.Context, ownershipToken models.OwnershipKey) (models.Account, error) {
+func (_m *Service) GetAccount(ctx context.Context, ownershipToken models.OwnershipKey) (*models.Account, error) {
 	ret := _m.Called(ctx, ownershipToken)
 
-	var r0 models.Account
-	if rf, ok := ret.Get(0).(func(context.Context, models.OwnershipKey) models.Account); ok {
+	var r0 *models.Account
+	if rf, ok := ret.Get(0).(func(context.Context, models.OwnershipKey) *models.Account); ok {
 		r0 = rf(ctx, ownershipToken)
 	} else {
-		r0 = ret.Get(0).(models.Account)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*models.Account)
+		}
 	}
 
 	var r1 error
@@ -145,11 +149,11 @@ func (_m *Service) GetPublicKey(ctx context.Context, address models.Address) (*c
 }
 
 // ResetPublicKey provides a mock function with given fields: ctx, req
-func (_m *Service) ResetPublicKey(ctx context.Context, req account_managermodels.ResetPublicKeyRequest) error {
+func (_m *Service) ResetPublicKey(ctx context.Context, req account_msmodels.ResetPublicKeyRequest) error {
 	ret := _m.Called(ctx, req)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, account_managermodels.ResetPublicKeyRequest) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, account_msmodels.ResetPublicKeyRequest) error); ok {
 		r0 = rf(ctx, req)
 	} else {
 		r0 = ret.Error(0)

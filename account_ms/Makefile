@@ -11,7 +11,7 @@ test:
 
 coverage:
 	go test ./... -race -failfast -covermode=atomic -coverprofile=coverage.out \
-	-coverpkg=./controller/...,./persistence...,./utils/... ./...
+	-coverpkg=./controller/...,./persistence...,./handler/... ./...
 	go tool cover -func coverage.out
 
 lint:
