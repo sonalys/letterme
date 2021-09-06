@@ -8,8 +8,8 @@ import (
 	"github.com/sonalys/letterme/domain/models"
 )
 
-// VerifyEmail communicates with account-ms to verify if email exists.
-func (s *Service) VerifyEmail(ctx context.Context, address models.Address) (bool, error) {
+// verifyEmailExistence communicates with account-ms to verify if email exists.
+func (s *Service) verifyEmailExistence(ctx context.Context, address models.Address) (bool, error) {
 	resp := new(contracts.CheckEmailResponse)
 	err := s.Router.Communicate(messaging.QAccountMS, models.Message{
 		Type: messaging.ECheckEmail,

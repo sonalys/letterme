@@ -18,12 +18,12 @@ func main() {
 	// Context with cancel so we can stop all children from their inner loops after os.Interrupt.
 	ctx, cancel := context.WithCancel(context.Background())
 
-	initialize(ctx)
-
 	smtp, err := smtp.InitServerFromEnv(ctx)
 	if err != nil {
 		panic(err)
 	}
+
+	initialize(ctx, smtp)
 
 	go smtp.Listen()
 	<-utils.GracefulShutdown()
@@ -33,7 +33,7 @@ func main() {
 
 // initialize starts all the ms dependencies and sub-routines,
 // if it fails, the ms will panic.
-func initialize(ctx context.Context) {
+func initialize(ctx context.Context, smtp *smtp.Server) {
 	mongoConfig := new(mongo.Configuration)
 	if err := utils.LoadFromEnv(mongo.ConfigEnv, mongoConfig); err != nil {
 		logrus.Panicf("failed to initialize mongoConfig from env: %s", err)
@@ -76,6 +76,8 @@ func initialize(ctx context.Context) {
 	if err != nil {
 		panic(err)
 	}
+
+	smtp.AddMiddlewares(svc.CheckDestinataryMiddleware)
 
 	handler.RegisterHandlers(router, svc)
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/sonalys/letterme/domain/interfaces"
+	"github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/email_ms/smtp"
 )
 
 const ServiceConfigurationEnv = "LM_EMAIL_SVC_CONFIG"
@@ -37,4 +39,23 @@ func NewService(ctx context.Context, c *Configuration, d *Dependencies) (*Servic
 		Dependencies: d,
 	}
 	return s, nil
+}
+
+// CheckDestinataryMiddleware is used to filter only existant recipients from an envelope.
+func (s *Service) CheckDestinataryMiddleware(next smtp.EnvelopeHandler) smtp.EnvelopeHandler {
+	return func(envelope *models.UnencryptedEmail) error {
+		var existentRecipients []models.Address
+		for _, address := range envelope.ToList {
+			exists, err := s.verifyEmailExistence(s.context, address)
+			if err != nil {
+				return err
+			}
+			if exists {
+				existentRecipients = append(existentRecipients, address)
+			}
+		}
+
+		envelope.ToList = existentRecipients
+		return next(envelope)
+	}
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func Test_VerifyEmail(t *testing.T) {
+func Test_VerifyEmailExistence(t *testing.T) {
 	ctx := context.Background()
 
 	testCases := []testCase{
@@ -21,7 +21,7 @@ func Test_VerifyEmail(t *testing.T) {
 			run: func(t *testing.T, s *Service, th *testHandler) {
 				th.router.On("Communicate", messaging.QAccountMS, mock.Anything, mock.Anything).
 					Return(errors.New("foo/bar"))
-				got, err := s.VerifyEmail(ctx, models.Address("foo/bar"))
+				got, err := s.verifyEmailExistence(ctx, models.Address("foo/bar"))
 				assert.Error(t, err)
 				assert.False(t, got)
 			},
@@ -33,7 +33,7 @@ func Test_VerifyEmail(t *testing.T) {
 					Run(mockSetDST(2, contracts.CheckEmailResponse{Exists: true})).
 					Return(nil)
 
-				exists, err := s.VerifyEmail(ctx, models.Address("foo/bar"))
+				exists, err := s.verifyEmailExistence(ctx, models.Address("foo/bar"))
 				assert.NoError(t, err)
 				assert.Equal(t, true, exists)
 			},
