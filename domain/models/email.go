@@ -26,6 +26,25 @@ type UnencryptedEmail struct {
 	Title       []byte              `json:"title"`
 	Text        []byte              `json:"text"`
 	HTML        []byte              `json:"html"`
+	size        uint64
+}
+
+func (m *UnencryptedEmail) Size() uint64 {
+	if m.size != 0 {
+		return m.size
+	}
+
+	m.size += uint64(len(m.Title))
+	m.size += uint64(len(m.Text))
+	m.size += uint64(len(m.HTML))
+	for i := range m.Attachments {
+		m.size += uint64(m.Attachments[i].Size)
+	}
+	for i := range m.Inlines {
+		m.size += uint64(m.Attachments[i].Size)
+	}
+
+	return m.size
 }
 
 // NewUnencryptedEmail is used by sync.Pool to pre-allocate envelopes.

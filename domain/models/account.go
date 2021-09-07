@@ -23,16 +23,18 @@ type Account struct {
 	DeviceCount uint8 `json:"device_count" bson:"deviceCount,omitempty"`
 	// TTL informs how many time messages sent to this user will persist,
 	// this information will be fetched and inserted into email.valid_until
-	TTL          time.Duration `json:"ttl" bson:"ttl,omitempty"`
-	MaxEmailSize uint64        `json:"max_email_size" bson:"maxEmailSize"`
-	MaxInboxSize uint64        `json:"max_inbox_size" bson:"maxInboxSize"`
+	TTL              time.Duration `json:"ttl" bson:"ttl,omitempty"`
+	MaxEmailSize     uint64        `json:"max_email_size" bson:"maxEmailSize"`
+	MaxInboxSize     uint64        `json:"max_inbox_size" bson:"maxInboxSize"`
+	CurrentInboxSize uint64        `json:"current_inbox_size" bson:"currentInboxSize"`
 }
 
 // AccountAddressInfo is used to fetch information about a given address.
 type AccountAddressInfo struct {
-	Address      Address                 `json:"address"`
-	PublicKey    *cryptography.PublicKey `json:"public_key"`
-	TTL          time.Duration           `json:"ttl" bson:"ttl,omitempty"`
-	MaxEmailSize uint64                  `json:"max_email_size" bson:"maxEmailSize"`
-	MaxInboxSize uint64                  `json:"max_inbox_size" bson:"maxInboxSize"`
+	Address          Address                 `json:"address"`
+	PublicKey        *cryptography.PublicKey `json:"public_key"`
+	TTL              time.Duration           `json:"ttl" bson:"ttl,omitempty"`
+	MaxEmailSize     uint64                  `json:"max_email_size" bson:"maxEmailSize"`
+	MaxInboxSize     uint64                  `json:"max_inbox_size" bson:"maxInboxSize"`
+	CurrentInboxSize uint64                  `json:"current_inbox_size" bson:"currentInboxSize"`
 }

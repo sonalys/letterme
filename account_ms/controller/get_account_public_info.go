@@ -23,10 +23,11 @@ func (s *Service) GetAccountPublicInfo(ctx context.Context, address dModels.Addr
 	}
 
 	return &dModels.AccountAddressInfo{
-		Address:      address,
-		PublicKey:    account.PublicKey,
-		TTL:          account.TTL,
-		MaxEmailSize: account.MaxEmailSize,
-		MaxInboxSize: account.MaxInboxSize,
+		Address:          address,
+		PublicKey:        account.PublicKey,
+		TTL:              account.TTL,
+		MaxEmailSize:     account.MaxEmailSize,
+		MaxInboxSize:     account.MaxInboxSize,
+		CurrentInboxSize: account.CurrentInboxSize,
 	}, nil
 }

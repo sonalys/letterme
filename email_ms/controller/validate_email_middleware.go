@@ -12,6 +12,11 @@ func (s *Service) ValidateEmailMiddleware(next smtp.EnvelopeHandler) smtp.Envelo
 			if err != nil {
 				return err
 			}
+
+			if info.CurrentInboxSize+pipeline.Envelope.Size() > info.MaxInboxSize {
+				return ErrInboxFull
+			}
+
 			pipeline.ProcessingEmailList = append(pipeline.ProcessingEmailList, smtp.ProcessingEmail{
 				To:          address,
 				AccountInfo: info.AccountAddressInfo,
