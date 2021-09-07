@@ -4,7 +4,7 @@ import (
 	"github.com/sonalys/letterme/email_ms/smtp"
 )
 
-// ValidateEmailMiddleware is used to filter only existant recipients from an envelope.
+// ValidateEmailMiddleware guarantees that the recipient exists and can receive this email.
 func (s *Service) ValidateEmailMiddleware(next smtp.EnvelopeHandler) smtp.EnvelopeHandler {
 	return func(pipeline *smtp.EmailPipeline) error {
 		for _, address := range pipeline.Envelope.ToList {

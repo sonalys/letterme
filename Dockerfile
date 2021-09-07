@@ -8,7 +8,7 @@ ARG TARGETOS
 ARG TARGETARCH
 RUN go build -o bin -mod vendor -ldflags '-w' .
 
-FROM alpine:3.12
+FROM scratch
 
 WORKDIR /app
 
