@@ -10,7 +10,7 @@ import (
 )
 
 func deleteQueue(c *Client, name messaging.Queue) {
-	_ = c.DeleteQueue(name)
+	_ = c.DeleteQueue(name, true)
 }
 
 func Test_NewClient(t *testing.T) {
@@ -39,7 +39,7 @@ func Test_DeleteQueue(t *testing.T) {
 	err = client.CreateQueue("test")
 	require.NoError(t, err, "should create a queue")
 
-	err = client.DeleteQueue("test")
+	err = client.DeleteQueue("test", false)
 	require.NoError(t, err, "recreating existent queue shouldn't give error")
 
 	err = client.Consume(ctx, "test", func(ctx context.Context, d messaging.Delivery) {})
@@ -53,7 +53,7 @@ func Test_PublishConsume(t *testing.T) {
 
 	queueName := messaging.AccountMS
 
-	defer deleteQueue(client, queueName)
+	client.DeleteQueue(queueName, true)
 
 	err = client.CreateQueue(queueName)
 	require.NoError(t, err, "should create a queue")
@@ -64,6 +64,7 @@ func Test_PublishConsume(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(1)
+
 	err = client.Consume(ctx, queueName, func(ctx context.Context, d messaging.Delivery) {
 		defer wg.Done()
 		resp := new([]byte)

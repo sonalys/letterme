@@ -98,13 +98,13 @@ func (c *Client) getChannel() (*Channel, error) {
 	return c.session, nil
 }
 
-func (c *Client) DeleteQueue(name messaging.Queue) error {
+func (c *Client) DeleteQueue(name messaging.Queue, forceDelete bool) error {
 	ch, err := c.getChannel()
 	if err != nil {
 		return err
 	}
 
-	_, err = ch.QueueDelete(string(name), true, true, true)
+	_, err = ch.QueueDelete(string(name), true, !forceDelete, true)
 	if err != nil {
 		return err
 	}

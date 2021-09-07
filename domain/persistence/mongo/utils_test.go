@@ -70,7 +70,7 @@ func Test_convertGenericIndexesToMongo(t *testing.T) {
 		got := convertGenericIndexesToMongo(indexes)
 
 		for i := range expected {
-			require.EqualValues(t, expected[i].Keys, got[i].Keys)
+			require.ElementsMatch(t, expected[i].Keys, got[i].Keys)
 		}
 	})
 }

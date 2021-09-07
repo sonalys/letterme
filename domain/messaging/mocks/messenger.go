@@ -56,6 +56,20 @@ func (_m *Messenger) CreateQueue(name messaging.Queue) error {
 	return r0
 }
 
+// DeleteQueue provides a mock function with given fields: name, forceDelete
+func (_m *Messenger) DeleteQueue(name messaging.Queue, forceDelete bool) error {
+	ret := _m.Called(name, forceDelete)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(messaging.Queue, bool) error); ok {
+		r0 = rf(name, forceDelete)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Publish provides a mock function with given fields: queue, m
 func (_m *Messenger) Publish(queue messaging.Queue, m messaging.Message) error {
 	ret := _m.Called(queue, m)

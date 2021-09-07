@@ -29,8 +29,8 @@ func Test_RouterAllOk(t *testing.T) {
 	require.NoError(t, err)
 
 	defer func() {
-		rabbit.DeleteQueue("ms-1")
-		rabbit.DeleteQueue("ms-2")
+		rabbit.DeleteQueue("ms-1", true)
+		rabbit.DeleteQueue("ms-2", true)
 	}()
 
 	router2.AddHandler(eventType, func(ctx context.Context, d messaging.Delivery) (interface{}, error) {
@@ -71,8 +71,8 @@ func Test_RouterTimeout(t *testing.T) {
 
 	defer func() {
 		cancel()
-		rabbit.DeleteQueue("ms-1")
-		rabbit.DeleteQueue("ms-2")
+		rabbit.DeleteQueue("ms-1", true)
+		rabbit.DeleteQueue("ms-2", true)
 	}()
 
 	router2.AddHandler(eventType, func(ctx context.Context, d messaging.Delivery) (interface{}, error) {

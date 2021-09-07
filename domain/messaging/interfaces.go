@@ -6,6 +6,7 @@ import "context"
 type Messenger interface {
 	Close() error
 	CreateQueue(name Queue) error
+	DeleteQueue(name Queue, forceDelete bool) error
 	Publish(queue Queue, m Message) error
 	Consume(ctx context.Context, queue Queue, handler DeliveryHandler) error
 }
