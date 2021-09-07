@@ -1,14 +1,14 @@
 package messaging
 
-type Queue = string
+type Queue string
 
 const (
-	QAccountMS Queue = "account-ms"
-	QEmailMS   Queue = "email-ms"
+	AccountMS Queue = "account-ms"
+	QEmailMS  Queue = "email-ms"
 )
 
-type Event = string
+type Event string
 
 const (
-	ECheckEmail Event = "check-email"
+	FetchEmailPublicInfo Event = "check-email"
 )

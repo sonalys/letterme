@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sonalys/letterme/account_ms/mocks"
+	"github.com/sonalys/letterme/domain/messaging"
 	"github.com/sonalys/letterme/domain/messaging/contracts"
 	"github.com/sonalys/letterme/domain/models"
 	"github.com/sonalys/letterme/domain/persistence/mongo"
@@ -56,7 +57,7 @@ func Test_verifyEmailExistence(t *testing.T) {
 	}
 	for _, tC := range testCases {
 		t.Run(tC.name, func(t *testing.T) {
-			msg := models.Delivery{}
+			msg := messaging.Delivery{}
 			err := msg.SetBody(tC.data)
 			require.NoError(t, err)
 

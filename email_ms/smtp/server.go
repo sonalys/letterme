@@ -172,8 +172,8 @@ func (s *Server) AddMiddlewares(middleware ...EnvelopeMiddleware) {
 
 // releaseEnvelopeMiddleware releases the envelope from the heap pool.
 func releaseEnvelopeMiddleware(next EnvelopeHandler) EnvelopeHandler {
-	return func(envelope *models.UnencryptedEmail) error {
-		envelopePool.Put(envelope)
+	return func(pipeline *EmailPipeline) error {
+		envelopePool.Put(pipeline.Envelope)
 		return nil
 	}
 }

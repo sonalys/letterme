@@ -2,19 +2,33 @@ package smtp
 
 import (
 	"github.com/pkg/errors"
+	"github.com/sonalys/letterme/domain/cryptography"
 	"github.com/sonalys/letterme/domain/models"
 )
 
 // EnvelopeMiddleware is a middleware that can be chained and create a pipeline.
 type EnvelopeMiddleware func(next EnvelopeHandler) EnvelopeHandler
 
+// ProcessingEmail is a transitory structure to parse pipeline emails.
+type ProcessingEmail struct {
+	To        models.Address
+	PublicKey *cryptography.PublicKey
+	Email     *models.Email
+}
+
+// EmailPipeline is used to construct an email pipeline, used to share states between middlewares.
+type EmailPipeline struct {
+	Envelope            *models.UnencryptedEmail
+	ProcessingEmailList []ProcessingEmail
+}
+
 // EnvelopeHandler is a handler that processes a pipeline.
-type EnvelopeHandler func(envelope *models.UnencryptedEmail) error
+type EnvelopeHandler func(envelope *EmailPipeline) error
 
 type Pipeline []EnvelopeHandler
 
 // emptyMiddleware is used as tail for the pipeline.
-func emptyMiddleware(envelope *models.UnencryptedEmail) error {
+func emptyMiddleware(envelope *EmailPipeline) error {
 	return nil
 }
 
@@ -42,7 +56,10 @@ func (p *Pipeline) AddMiddlewares(middlewares ...EnvelopeMiddleware) {
 // Start should execute the pipeline.
 func (p *Pipeline) Start(envelope *models.UnencryptedEmail) error {
 	lastIndex := len(*p) - 1
-	if err := (*p)[lastIndex](envelope); err != nil {
+	if err := (*p)[lastIndex](&EmailPipeline{
+		Envelope:            envelope,
+		ProcessingEmailList: []ProcessingEmail{},
+	}); err != nil {
 		return errors.Wrap(err, "failed to process envelope pipeline")
 	}
 	return nil

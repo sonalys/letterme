@@ -3,9 +3,9 @@ package controller
 import (
 	"context"
 
-	"github.com/sonalys/letterme/domain/interfaces"
-	"github.com/sonalys/letterme/domain/models"
-	"github.com/sonalys/letterme/email_ms/smtp"
+	"github.com/sonalys/letterme/domain/cryptography"
+	"github.com/sonalys/letterme/domain/messaging"
+	"github.com/sonalys/letterme/domain/persistence"
 )
 
 const ServiceConfigurationEnv = "LM_EMAIL_SVC_CONFIG"
@@ -16,9 +16,10 @@ type Configuration struct {
 
 // Dependencies are the integrations required to initialize the service.
 type Dependencies struct {
-	interfaces.Persistence
-	interfaces.Messaging
-	interfaces.Router
+	persistence.Persistence
+	messaging.Messenger
+	messaging.EventRouter
+	cryptography.CryptographicRouter
 }
 
 // Service represents the api logic controller,
@@ -39,23 +40,4 @@ func NewService(ctx context.Context, c *Configuration, d *Dependencies) (*Servic
 		Dependencies: d,
 	}
 	return s, nil
-}
-
-// CheckDestinataryMiddleware is used to filter only existant recipients from an envelope.
-func (s *Service) CheckDestinataryMiddleware(next smtp.EnvelopeHandler) smtp.EnvelopeHandler {
-	return func(envelope *models.UnencryptedEmail) error {
-		var existentRecipients []models.Address
-		for _, address := range envelope.ToList {
-			exists, err := s.verifyEmailExistence(s.context, address)
-			if err != nil {
-				return err
-			}
-			if exists {
-				existentRecipients = append(existentRecipients, address)
-			}
-		}
-
-		envelope.ToList = existentRecipients
-		return next(envelope)
-	}
 }

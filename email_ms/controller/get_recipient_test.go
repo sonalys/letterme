@@ -5,11 +5,13 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/sonalys/letterme/domain/cryptography"
 	"github.com/sonalys/letterme/domain/messaging"
 	"github.com/sonalys/letterme/domain/messaging/contracts"
 	"github.com/sonalys/letterme/domain/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_VerifyEmailExistence(t *testing.T) {
@@ -19,23 +21,28 @@ func Test_VerifyEmailExistence(t *testing.T) {
 		{
 			name: "fail to publish",
 			run: func(t *testing.T, s *Service, th *testHandler) {
-				th.router.On("Communicate", messaging.QAccountMS, mock.Anything, mock.Anything).
+				th.router.On("Communicate", messaging.AccountMS, mock.Anything, mock.Anything).
 					Return(errors.New("foo/bar"))
-				got, err := s.verifyEmailExistence(ctx, models.Address("foo/bar"))
+				exists, pk, err := s.getRecipient(ctx, models.Address("foo/bar"))
 				assert.Error(t, err)
-				assert.False(t, got)
+				assert.Nil(t, pk)
+				assert.False(t, exists)
 			},
 		},
 		{
 			name: "all ok",
 			run: func(t *testing.T, s *Service, th *testHandler) {
-				th.router.On("Communicate", messaging.QAccountMS, mock.Anything, mock.Anything).
-					Run(mockSetDST(2, contracts.CheckEmailResponse{Exists: true})).
+				privKey, err := cryptography.NewPrivateKey(2048)
+				require.NoError(t, err)
+				pubKey := privKey.GetPublicKey()
+				th.router.On("Communicate", messaging.AccountMS, mock.Anything, mock.Anything).
+					Run(mockSetDST(2, contracts.CheckEmailResponse{Exists: true, PublicKey: pubKey})).
 					Return(nil)
 
-				exists, err := s.verifyEmailExistence(ctx, models.Address("foo/bar"))
+				exists, pk, err := s.getRecipient(ctx, models.Address("foo/bar"))
 				assert.NoError(t, err)
 				assert.Equal(t, true, exists)
+				assert.Equal(t, pubKey, pk)
 			},
 		},
 	}

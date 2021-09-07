@@ -1,4 +1,4 @@
-package models
+package messaging
 
 import (
 	"context"
@@ -52,9 +52,9 @@ type Message struct {
 	Expiration      string    // message expiration spec
 	MessageId       string    // message identifier
 	Timestamp       time.Time // message timestamp
-	Type            string    // message type name
+	Type            Event     // message type name
 	UserId          string    // creating user id - ex: "guest"
-	AppId           string    // creating application id
+	AppId           Queue     // creating application id
 
 	// The application specific payload of the message
 	Body interface{}
@@ -105,9 +105,9 @@ func NewDelivery(d amqp.Delivery) Delivery {
 			Expiration:      d.Expiration,
 			MessageId:       d.MessageId,
 			Timestamp:       d.Timestamp,
-			Type:            d.Type,
+			Type:            Event(d.Type),
 			UserId:          d.UserId,
-			AppId:           d.AppId,
+			AppId:           Queue(d.AppId),
 		},
 		ConsumerTag:  d.ConsumerTag,
 		MessageCount: d.MessageCount,

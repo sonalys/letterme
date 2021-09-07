@@ -10,8 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"github.com/sonalys/letterme/domain/interfaces"
-	"github.com/sonalys/letterme/domain/models"
 )
 
 // Router is responsible for consuming events from message broker and handling it.
@@ -19,7 +17,7 @@ import (
 //	- Requests: we need to process them using Service and send a message back.
 //	- Response: we required it to other ms and need to get the response inside the context.
 type Router struct {
-	handlers         map[string]models.RouterHandler
+	handlers         map[Event]RouterHandler
 	pendingResponses sync.Map
 	*Configuration
 	*Dependencies
@@ -27,17 +25,17 @@ type Router struct {
 
 type Configuration struct {
 	ResponseTimeout time.Duration `json:"response_timeout"`
-	ResponseChannel string        `json:"response_channel"`
+	ResponseChannel Queue         `json:"response_channel"`
 }
 
 type Dependencies struct {
-	interfaces.Messaging
+	Messenger
 }
 
 // NewRouter instantiates a new event router.
 func NewRouter(ctx context.Context, c *Configuration, m *Dependencies) (*Router, error) {
 	router := &Router{
-		handlers:         map[string]models.RouterHandler{},
+		handlers:         map[Event]RouterHandler{},
 		pendingResponses: sync.Map{},
 		Configuration:    c,
 		Dependencies:     m,
@@ -61,9 +59,9 @@ func (r *Router) cleaningRoutine(ctx context.Context) {
 		}
 
 		r.pendingResponses.Range(func(key, value interface{}) bool {
-			pending := value.(*models.PendingResponse)
+			pending := value.(*PendingResponse)
 			if time.Since(pending.CreatedAt) > r.ResponseTimeout {
-				pending.RespChan <- models.Response{
+				pending.RespChan <- Response{
 					Error: "response timed-out",
 				}
 				r.pendingResponses.Delete(key)
@@ -75,14 +73,14 @@ func (r *Router) cleaningRoutine(ctx context.Context) {
 	}
 }
 
-func (r *Router) startConsumer() models.DeliveryHandler {
-	return func(ctx context.Context, d models.Delivery) {
+func (r *Router) startConsumer() DeliveryHandler {
+	return func(ctx context.Context, d Delivery) {
 		// Incoming messages that should respond.
 		if handler, ok := r.handlers[d.Type]; ok {
 			m, err := handler(ctx, d)
-			r.Publish(d.AppId, models.Message{
+			r.Publish(d.AppId, Message{
 				ReplyTo: d.ReplyTo,
-				Body:    models.NewResponse(m, err),
+				Body:    NewResponse(m, err),
 			})
 			return
 		}
@@ -91,13 +89,13 @@ func (r *Router) startConsumer() models.DeliveryHandler {
 		if resp, ok := r.pendingResponses.Load(d.ReplyTo); ok {
 			d.Acknowledger.Ack(d.DeliveryTag, true)
 
-			msg := new(models.Response)
+			msg := new(Response)
 			if err := d.GetBody(msg); err != nil {
-				resp.(*models.PendingResponse).RespChan <- models.Response{
+				resp.(*PendingResponse).RespChan <- Response{
 					Error: err.Error(),
 				}
 			} else {
-				resp.(*models.PendingResponse).RespChan <- models.Response{
+				resp.(*PendingResponse).RespChan <- Response{
 					Resp:  msg.Resp,
 					Error: msg.Error,
 				}
@@ -111,8 +109,8 @@ func (r *Router) startConsumer() models.DeliveryHandler {
 }
 
 // WaitResponse is used to retrieve an expected response from the queue.
-func (r *Router) Communicate(queue string, m models.Message, dst interface{}) error {
-	ch := make(chan models.Response, 1)
+func (r *Router) Communicate(queue Queue, m Message, dst interface{}) error {
+	ch := make(chan Response, 1)
 	defer close(ch)
 
 	m.AppId = r.ResponseChannel
@@ -122,7 +120,7 @@ func (r *Router) Communicate(queue string, m models.Message, dst interface{}) er
 		return err
 	}
 
-	r.pendingResponses.Store(m.ReplyTo, &models.PendingResponse{
+	r.pendingResponses.Store(m.ReplyTo, &PendingResponse{
 		RespChan:  ch,
 		CreatedAt: time.Now(),
 	})
@@ -141,6 +139,6 @@ func (r *Router) Communicate(queue string, m models.Message, dst interface{}) er
 	return nil
 }
 
-func (r *Router) AddHandler(eventType string, handler models.RouterHandler) {
+func (r *Router) AddHandler(eventType Event, handler RouterHandler) {
 	r.handlers[eventType] = handler
 }

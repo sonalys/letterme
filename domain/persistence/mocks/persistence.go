@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	interfaces "github.com/sonalys/letterme/domain/interfaces"
+	persistence "github.com/sonalys/letterme/domain/persistence"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,15 +15,15 @@ type Persistence struct {
 }
 
 // CreateCollection provides a mock function with given fields: colName, indexes
-func (_m *Persistence) CreateCollection(colName string, indexes []map[string]interface{}) (interfaces.Collection, error) {
+func (_m *Persistence) CreateCollection(colName string, indexes []map[string]interface{}) (persistence.Collection, error) {
 	ret := _m.Called(colName, indexes)
 
-	var r0 interfaces.Collection
-	if rf, ok := ret.Get(0).(func(string, []map[string]interface{}) interfaces.Collection); ok {
+	var r0 persistence.Collection
+	if rf, ok := ret.Get(0).(func(string, []map[string]interface{}) persistence.Collection); ok {
 		r0 = rf(colName, indexes)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interfaces.Collection)
+			r0 = ret.Get(0).(persistence.Collection)
 		}
 	}
 
@@ -52,15 +52,15 @@ func (_m *Persistence) DeleteCollection(ctx context.Context, colName string) err
 }
 
 // GetCollection provides a mock function with given fields: colName
-func (_m *Persistence) GetCollection(colName string) interfaces.Collection {
+func (_m *Persistence) GetCollection(colName string) persistence.Collection {
 	ret := _m.Called(colName)
 
-	var r0 interfaces.Collection
-	if rf, ok := ret.Get(0).(func(string) interfaces.Collection); ok {
+	var r0 persistence.Collection
+	if rf, ok := ret.Get(0).(func(string) persistence.Collection); ok {
 		r0 = rf(colName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(interfaces.Collection)
+			r0 = ret.Get(0).(persistence.Collection)
 		}
 	}
 

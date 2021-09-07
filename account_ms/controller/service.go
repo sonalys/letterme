@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/sonalys/letterme/domain/interfaces"
+	"github.com/sonalys/letterme/domain/persistence"
 	"github.com/sonalys/letterme/domain/persistence/mongo"
 	"github.com/sonalys/letterme/domain/utils"
 
@@ -29,7 +29,7 @@ type Configuration struct {
 
 // Dependencies are the integrations required to initialize the service.
 type Dependencies struct {
-	interfaces.Persistence
+	persistence.Persistence
 	cryptography.CryptographicRouter
 	cryptography.Authenticator
 }

@@ -4,18 +4,19 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sonalys/letterme/domain/mocks"
-	"github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/domain/messaging"
+	mMocks "github.com/sonalys/letterme/domain/messaging/mocks"
+	"github.com/sonalys/letterme/domain/persistence/mocks"
 	"github.com/stretchr/testify/mock"
 )
 
-func transformChannel(i chan models.Response) <-chan models.Response {
+func transformChannel(i chan messaging.Response) <-chan messaging.Response {
 	return i
 }
 
 type testHandler struct {
-	messaging   *mocks.Messaging
-	router      *mocks.Router
+	messenger   *mMocks.Messenger
+	router      *mMocks.EventRouter
 	persistence *mocks.Persistence
 }
 
@@ -28,14 +29,14 @@ func runTest(t *testing.T, testList []testCase) {
 	for _, tC := range testList {
 		t.Run(tC.name, func(t *testing.T) {
 			th := testHandler{
-				messaging:   &mocks.Messaging{},
-				router:      &mocks.Router{},
+				messenger:   &mMocks.Messenger{},
+				router:      &mMocks.EventRouter{},
 				persistence: &mocks.Persistence{},
 			}
 			svc := &Service{
 				Dependencies: &Dependencies{
-					Messaging:   th.messaging,
-					Router:      th.router,
+					Messenger:   th.messenger,
+					EventRouter: th.router,
 					Persistence: th.persistence,
 				},
 			}

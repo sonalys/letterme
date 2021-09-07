@@ -20,5 +20,5 @@ lint:
 	golangci-lint run --config .golangci.yml --timeout=5m
 
 gen:
-	rm -rf ./mocks/*.go
-	mockery --dir ./interfaces/ --all --case underscore --disable-version-string
+	rm -rf ./messaging/mocks && mockery --dir ./messaging/ --output ./messaging/mocks/ --all --case underscore --disable-version-string
+	rm -rf ./persistence/mocks && mockery --dir ./persistence/ --output ./persistence/mocks/ --all --case underscore --disable-version-string

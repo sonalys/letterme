@@ -30,8 +30,8 @@ func Test_Pipeline(t *testing.T) {
 			middlewares: func(tC testCase) []EnvelopeMiddleware {
 				return []EnvelopeMiddleware{
 					func(next EnvelopeHandler) EnvelopeHandler {
-						return func(env *models.UnencryptedEmail) error {
-							env.From = tC.expectedOutput.From
+						return func(env *EmailPipeline) error {
+							env.Envelope.From = tC.expectedOutput.From
 							return next(env)
 						}
 					},
@@ -46,7 +46,7 @@ func Test_Pipeline(t *testing.T) {
 			middlewares: func(tC testCase) []EnvelopeMiddleware {
 				return []EnvelopeMiddleware{
 					func(next EnvelopeHandler) EnvelopeHandler {
-						return func(env *models.UnencryptedEmail) error {
+						return func(env *EmailPipeline) error {
 							return tC.expectedError
 						}
 					},
@@ -64,14 +64,14 @@ func Test_Pipeline(t *testing.T) {
 			middlewares: func(tC testCase) []EnvelopeMiddleware {
 				return []EnvelopeMiddleware{
 					func(next EnvelopeHandler) EnvelopeHandler {
-						return func(env *models.UnencryptedEmail) error {
-							env.Title = tC.expectedOutput.Title
+						return func(env *EmailPipeline) error {
+							env.Envelope.Title = tC.expectedOutput.Title
 							return next(env)
 						}
 					},
 					func(next EnvelopeHandler) EnvelopeHandler {
-						return func(env *models.UnencryptedEmail) error {
-							env.ToList = tC.expectedOutput.ToList
+						return func(env *EmailPipeline) error {
+							env.Envelope.ToList = tC.expectedOutput.ToList
 							return next(env)
 						}
 					},
@@ -88,14 +88,14 @@ func Test_Pipeline(t *testing.T) {
 			middlewares: func(tC testCase) []EnvelopeMiddleware {
 				return []EnvelopeMiddleware{
 					func(next EnvelopeHandler) EnvelopeHandler {
-						return func(env *models.UnencryptedEmail) error {
-							env.Title = tC.expectedOutput.Title
+						return func(env *EmailPipeline) error {
+							env.Envelope.Title = tC.expectedOutput.Title
 							return tC.expectedError
 						}
 					},
 					func(next EnvelopeHandler) EnvelopeHandler {
-						return func(env *models.UnencryptedEmail) error {
-							env.ToList = []models.Address{"bananas"}
+						return func(env *EmailPipeline) error {
+							env.Envelope.ToList = []models.Address{"bananas"}
 							return next(env)
 						}
 					},
@@ -113,14 +113,14 @@ func Test_Pipeline(t *testing.T) {
 			middlewares: func(tC testCase) []EnvelopeMiddleware {
 				return []EnvelopeMiddleware{
 					func(next EnvelopeHandler) EnvelopeHandler {
-						return func(env *models.UnencryptedEmail) error {
-							env.ToList = tC.expectedOutput.ToList
+						return func(env *EmailPipeline) error {
+							env.Envelope.ToList = tC.expectedOutput.ToList
 							return next(env)
 						}
 					},
 					func(next EnvelopeHandler) EnvelopeHandler {
-						return func(env *models.UnencryptedEmail) error {
-							env.Title = tC.expectedOutput.Title
+						return func(env *EmailPipeline) error {
+							env.Envelope.Title = tC.expectedOutput.Title
 							return tC.expectedError
 						}
 					},

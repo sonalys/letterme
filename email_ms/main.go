@@ -15,7 +15,6 @@ import (
 )
 
 func main() {
-	// Context with cancel so we can stop all children from their inner loops after os.Interrupt.
 	ctx, cancel := context.WithCancel(context.Background())
 
 	smtp, err := smtp.InitServerFromEnv(ctx)
@@ -31,8 +30,6 @@ func main() {
 	smtp.Shutdown()
 }
 
-// initialize starts all the ms dependencies and sub-routines,
-// if it fails, the ms will panic.
 func initialize(ctx context.Context, smtp *smtp.Server) {
 	mongoConfig := new(mongo.Configuration)
 	if err := utils.LoadFromEnv(mongo.ConfigEnv, mongoConfig); err != nil {
@@ -61,7 +58,7 @@ func initialize(ctx context.Context, smtp *smtp.Server) {
 	}
 
 	router, err := messaging.NewRouter(ctx, routerConfig, &messaging.Dependencies{
-		Messaging: rabbit,
+		Messenger: rabbit,
 	})
 	if err != nil {
 		panic(err)
@@ -69,15 +66,14 @@ func initialize(ctx context.Context, smtp *smtp.Server) {
 
 	controllerConfig := &controller.Configuration{}
 	svc, err := controller.NewService(ctx, controllerConfig, &controller.Dependencies{
-		Router:      router,
+		EventRouter: router,
 		Persistence: mongo,
-		Messaging:   rabbit,
+		Messenger:   rabbit,
 	})
 	if err != nil {
 		panic(err)
 	}
 
 	smtp.AddMiddlewares(svc.CheckDestinataryMiddleware)
-
 	handler.RegisterHandlers(router, svc)
 }

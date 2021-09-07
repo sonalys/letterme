@@ -9,7 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/domain/messaging"
 	"github.com/sonalys/letterme/domain/utils"
 	"github.com/streadway/amqp"
 )
@@ -98,13 +98,13 @@ func (c *Client) getChannel() (*Channel, error) {
 	return c.session, nil
 }
 
-func (c *Client) DeleteQueue(name string) error {
+func (c *Client) DeleteQueue(name messaging.Queue) error {
 	ch, err := c.getChannel()
 	if err != nil {
 		return err
 	}
 
-	_, err = ch.QueueDelete(name, true, true, true)
+	_, err = ch.QueueDelete(string(name), true, true, true)
 	if err != nil {
 		return err
 	}
@@ -113,14 +113,14 @@ func (c *Client) DeleteQueue(name string) error {
 }
 
 // CreateQueue creates a new topic in which you can either publish or subscribe.
-func (c *Client) CreateQueue(name string) error {
+func (c *Client) CreateQueue(name messaging.Queue) error {
 	ch, err := c.getChannel()
 	if err != nil {
 		return err
 	}
 
 	if _, err := ch.QueueDeclare(
-		name, false, false, false, false, nil,
+		string(name), false, false, false, false, nil,
 	); err != nil {
 		_ = c.revalidateSession()
 		return err
@@ -130,13 +130,13 @@ func (c *Client) CreateQueue(name string) error {
 }
 
 // Publish sends a new message to the specified queue, the queue must already exist.
-func (c *Client) Publish(queue string, m models.Message) error {
+func (c *Client) Publish(queue messaging.Queue, m messaging.Message) error {
 	ch, err := c.getChannel()
 	if err != nil {
 		return err
 	}
 
-	if err := ch.Publish("", queue, false, false, transformMessageToRabbit(m)); err != nil {
+	if err := ch.Publish("", string(queue), false, false, transformMessageToRabbit(m)); err != nil {
 		_ = c.revalidateSession()
 		return errors.Wrap(err, fmt.Sprintf(errPublish, queue))
 	}
@@ -144,7 +144,7 @@ func (c *Client) Publish(queue string, m models.Message) error {
 	return nil
 }
 
-func transformMessageToRabbit(m models.Message) amqp.Publishing {
+func transformMessageToRabbit(m messaging.Message) amqp.Publishing {
 	body, _ := json.Marshal(m.Body)
 	return amqp.Publishing{
 		Headers:         amqp.Table(m.Headers),
@@ -157,21 +157,21 @@ func transformMessageToRabbit(m models.Message) amqp.Publishing {
 		Expiration:      m.Expiration,
 		MessageId:       m.MessageId,
 		Timestamp:       m.Timestamp,
-		Type:            m.Type,
+		Type:            string(m.Type),
 		UserId:          m.UserId,
-		AppId:           m.AppId,
+		AppId:           string(m.AppId),
 		Body:            body,
 	}
 }
 
 // Consume allows you to specify a handler for a given queue, the queue must already exist.
-func (c *Client) Consume(ctx context.Context, queue string, handler models.DeliveryHandler) error {
+func (c *Client) Consume(ctx context.Context, queue messaging.Queue, handler messaging.DeliveryHandler) error {
 	ch, err := c.getChannel()
 	if err != nil {
 		return err
 	}
 
-	recv, err := ch.Consume(queue, "", false, false, false, false, nil)
+	recv, err := ch.Consume(string(queue), "", false, false, false, false, nil)
 	if err != nil {
 		_ = c.revalidateSession()
 		return err
@@ -191,6 +191,6 @@ func (c *Client) Consume(ctx context.Context, queue string, handler models.Deliv
 	return nil
 }
 
-func transformDeliveryFromRabbit(d Delivery) models.Delivery {
-	return models.NewDelivery(d)
+func transformDeliveryFromRabbit(d Delivery) messaging.Delivery {
+	return messaging.NewDelivery(d)
 }

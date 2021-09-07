@@ -72,7 +72,7 @@ func initialize(ctx context.Context) {
 	}
 
 	eventRouter, err := messaging.NewRouter(ctx, routerConfig, &messaging.Dependencies{
-		Messaging: rabbit,
+		Messenger: rabbit,
 	})
 	if err != nil {
 		panic(err)

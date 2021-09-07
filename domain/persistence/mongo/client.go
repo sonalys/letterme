@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/sonalys/letterme/domain/interfaces"
 	dModels "github.com/sonalys/letterme/domain/models"
+	"github.com/sonalys/letterme/domain/persistence"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -94,7 +94,7 @@ func NewClient(ctx context.Context, c *Configuration) (*Client, error) {
 }
 
 // CreateCollection creates a collection in mongo.
-func (m *Client) CreateCollection(colName string, indexes []map[string]interface{}) (interfaces.Collection, error) {
+func (m *Client) CreateCollection(colName string, indexes []map[string]interface{}) (persistence.Collection, error) {
 	createOpts := options.Collection()
 	col := m.client.Collection(colName, createOpts)
 	mongoIndexes := convertGenericIndexesToMongo(indexes)
@@ -115,7 +115,7 @@ func (m *Client) DeleteCollection(ctx context.Context, colName string) error {
 }
 
 // GetCollection returns collection from mongo.
-func (m *Client) GetCollection(colName string) interfaces.Collection {
+func (m *Client) GetCollection(colName string) persistence.Collection {
 	createOpts := options.Collection()
 	return &Collection{
 		Collection: m.client.Collection(colName, createOpts),
