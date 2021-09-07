@@ -31,7 +31,7 @@ func Test_ResetPublicKey(t *testing.T) {
 			dModels.Address("alysson@letter.me"),
 			dModels.Address("alysson_2@letter.me"),
 		},
-		PublicKey: *oldKey.GetPublicKey(),
+		PublicKey: oldKey.GetPublicKey(),
 	}
 
 	_, err = col.Create(ctx, account)
@@ -44,7 +44,7 @@ func Test_ResetPublicKey(t *testing.T) {
 
 	err = svc.ResetPublicKey(ctx, models.ResetPublicKeyRequest{
 		OwnershipKey: account.OwnershipKey,
-		PublicKey:    *newPublicKey,
+		PublicKey:    newPublicKey,
 	})
 	require.NoError(t, err, "should change public key")
 
@@ -52,5 +52,5 @@ func Test_ResetPublicKey(t *testing.T) {
 	err = col.First(ctx, filter{}, &dbAccount)
 	require.NoError(t, err, "should find account")
 
-	require.Equal(t, *newPublicKey, dbAccount.PublicKey, "public key should be updated")
+	require.Equal(t, newPublicKey, dbAccount.PublicKey, "public key should be updated")
 }

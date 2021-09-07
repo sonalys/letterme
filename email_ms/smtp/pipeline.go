@@ -2,7 +2,6 @@ package smtp
 
 import (
 	"github.com/pkg/errors"
-	"github.com/sonalys/letterme/domain/cryptography"
 	"github.com/sonalys/letterme/domain/models"
 )
 
@@ -11,9 +10,9 @@ type EnvelopeMiddleware func(next EnvelopeHandler) EnvelopeHandler
 
 // ProcessingEmail is a transitory structure to parse pipeline emails.
 type ProcessingEmail struct {
-	To        models.Address
-	PublicKey *cryptography.PublicKey
-	Email     *models.Email
+	To          models.Address
+	AccountInfo *models.AccountAddressInfo
+	Email       *models.Email
 }
 
 // EmailPipeline is used to construct an email pipeline, used to share states between middlewares.

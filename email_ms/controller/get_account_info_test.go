@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_VerifyEmailExistence(t *testing.T) {
+func Test_getAccountInfo(t *testing.T) {
 	ctx := context.Background()
 
 	testCases := []testCase{
@@ -23,10 +23,9 @@ func Test_VerifyEmailExistence(t *testing.T) {
 			run: func(t *testing.T, s *Service, th *testHandler) {
 				th.router.On("Communicate", messaging.AccountMS, mock.Anything, mock.Anything).
 					Return(errors.New("foo/bar"))
-				exists, pk, err := s.getRecipient(ctx, models.Address("foo/bar"))
+				info, err := s.getAccountInfo(ctx, models.Address("foo/bar"))
 				assert.Error(t, err)
-				assert.Nil(t, pk)
-				assert.False(t, exists)
+				assert.Nil(t, info)
 			},
 		},
 		{
@@ -35,14 +34,17 @@ func Test_VerifyEmailExistence(t *testing.T) {
 				privKey, err := cryptography.NewPrivateKey(2048)
 				require.NoError(t, err)
 				pubKey := privKey.GetPublicKey()
+
+				resp := contracts.GetAccountInfoResponse{AccountAddressInfo: &models.AccountAddressInfo{
+					PublicKey: pubKey,
+				}}
 				th.router.On("Communicate", messaging.AccountMS, mock.Anything, mock.Anything).
-					Run(mockSetDST(2, contracts.CheckEmailResponse{Exists: true, PublicKey: pubKey})).
+					Run(mockSetDST(2, resp)).
 					Return(nil)
 
-				exists, pk, err := s.getRecipient(ctx, models.Address("foo/bar"))
+				info, err := s.getAccountInfo(ctx, models.Address("foo/bar"))
 				assert.NoError(t, err)
-				assert.Equal(t, true, exists)
-				assert.Equal(t, pubKey, pk)
+				assert.EqualValues(t, resp, *info)
 			},
 		},
 	}

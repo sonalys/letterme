@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_verifyEmailExistence(t *testing.T) {
+func Test_getAccountPublicInfo(t *testing.T) {
 	ctx := context.Background()
 	testCases := []testCase{
 		{
@@ -23,36 +23,40 @@ func Test_verifyEmailExistence(t *testing.T) {
 		},
 		{
 			name: "not found",
-			data: contracts.CheckEmailRequest{
+			data: contracts.GetAccountInfoRequest{
 				Address: models.Address("bananas@letter.me"),
 			},
 			preRun: func(t *testing.T, mock *mocks.Service) {
-				mock.On("GetPublicKey", ctx, models.Address("bananas@letter.me")).
+				mock.On("GetAccountPublicInfo", ctx, models.Address("bananas@letter.me")).
 					Return(nil, mongo.ErrNotFound)
 			},
-			expResp: contracts.CheckEmailResponse{Exists: false},
+			expResp: contracts.GetAccountInfoResponse{},
 		},
 		{
 			name: "custom error",
-			data: contracts.CheckEmailRequest{
+			data: contracts.GetAccountInfoRequest{
 				Address: models.Address("bananas@letter.me"),
 			},
 			preRun: func(t *testing.T, mock *mocks.Service) {
-				mock.On("GetPublicKey", ctx, models.Address("bananas@letter.me")).
+				mock.On("GetAccountPublicInfo", ctx, models.Address("bananas@letter.me")).
 					Return(nil, errors.New("foo/bar"))
 			},
 			expError: errInternal,
 		},
 		{
 			name: "found",
-			data: contracts.CheckEmailRequest{
+			data: contracts.GetAccountInfoRequest{
 				Address: models.Address("bananas@letter.me"),
 			},
 			preRun: func(t *testing.T, mock *mocks.Service) {
-				mock.On("GetPublicKey", ctx, models.Address("bananas@letter.me")).
-					Return(nil, nil)
+				mock.On("GetAccountPublicInfo", ctx, models.Address("bananas@letter.me")).
+					Return(&models.AccountAddressInfo{
+						Address: models.Address("bananas@letter.me"),
+					}, nil)
 			},
-			expResp: contracts.CheckEmailResponse{Exists: true},
+			expResp: contracts.GetAccountInfoResponse{AccountAddressInfo: &models.AccountAddressInfo{
+				Address: models.Address("bananas@letter.me"),
+			}},
 		},
 	}
 	for _, tC := range testCases {
@@ -67,7 +71,7 @@ func Test_verifyEmailExistence(t *testing.T) {
 			if tC.preRun != nil {
 				tC.preRun(t, mock)
 			}
-			got, err := handler.verifyEmailExistence(ctx, msg)
+			got, err := handler.getAccountPublicInfo(ctx, msg)
 			require.Equal(t, tC.expResp, got)
 			if tC.expError != nil {
 				require.True(t, errors.Is(err, tC.expError))

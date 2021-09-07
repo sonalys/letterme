@@ -10,5 +10,5 @@ const (
 type Event string
 
 const (
-	FetchEmailPublicInfo Event = "check-email"
+	FetchEmailPublicInfo Event = "get-account-info"
 )

@@ -4,7 +4,6 @@ import (
 	"github.com/sonalys/letterme/domain/cryptography"
 )
 
-// nolint:unused // will be.
 func (s *Service) encrypt(k *cryptography.PublicKey, src interface{}) (buf *cryptography.EncryptedBuffer, err error) {
 	return s.CryptographicRouter.Encrypt(k, src)
 }

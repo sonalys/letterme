@@ -74,6 +74,6 @@ func initialize(ctx context.Context, smtp *smtp.Server) {
 		panic(err)
 	}
 
-	smtp.AddMiddlewares(svc.CheckDestinataryMiddleware)
+	smtp.AddMiddlewares(svc.ValidateEmailMiddleware)
 	handler.RegisterHandlers(router, svc)
 }

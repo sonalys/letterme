@@ -120,13 +120,12 @@ func NewPrivateKey(b int) (*PrivateKey, error) {
 }
 
 type rsa_oaep struct {
-	cypher []byte
-	hash   hash.Hash
+	hash hash.Hash
 }
 
 // Decrypt uses RSA-OAEP decryption algorithm using sha-512 hash.
 // We will use this for authencity checks, we don't decrypt any user content ever.
-func (r rsa_oaep) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) error {
+func (r rsa_oaep) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}, cypher []byte) error {
 	msgLen := len(b.Buffer)
 	step := k.PublicKey.Size()
 	encryptedBytes := b.Buffer
@@ -138,7 +137,7 @@ func (r rsa_oaep) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) er
 			endOffset = msgLen
 		}
 
-		decryptedBlockBytes, err := rsa.DecryptOAEP(r.hash, rand.Reader, k.Get(), encryptedBytes[startOffset:endOffset], r.cypher)
+		decryptedBlockBytes, err := rsa.DecryptOAEP(r.hash, rand.Reader, k.Get(), encryptedBytes[startOffset:endOffset], cypher)
 		if err != nil {
 			return err
 		}
@@ -150,7 +149,7 @@ func (r rsa_oaep) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) er
 }
 
 // Encrypt uses RSA-OAEP encryption algorithm using sha-512 hash.
-func (r rsa_oaep) Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, error) {
+func (r rsa_oaep) Encrypt(k *PublicKey, src interface{}, cypher []byte) (*EncryptedBuffer, error) {
 	bytes, err := json.Marshal(src)
 	if err != nil {
 		return nil, err
@@ -167,7 +166,7 @@ func (r rsa_oaep) Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, erro
 			endOffset = msgLen
 		}
 
-		encryptedBlockBytes, err := rsa.EncryptOAEP(r.hash, rand.Reader, k.Get(), bytes[startOffset:endOffset], r.cypher)
+		encryptedBlockBytes, err := rsa.EncryptOAEP(r.hash, rand.Reader, k.Get(), bytes[startOffset:endOffset], cypher)
 		if err != nil {
 			return nil, err
 		}

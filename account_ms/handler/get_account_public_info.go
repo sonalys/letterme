@@ -9,18 +9,18 @@ import (
 	"github.com/sonalys/letterme/domain/persistence/mongo"
 )
 
-func (h *Handler) verifyEmailExistence(ctx context.Context, d messaging.Delivery) (interface{}, error) {
-	req := new(contracts.CheckEmailRequest)
+func (h *Handler) getAccountPublicInfo(ctx context.Context, d messaging.Delivery) (interface{}, error) {
+	req := new(contracts.GetAccountInfoRequest)
 	if err := d.GetBody(req); err != nil {
 		return nil, errors.Wrap(errDecode, err.Error())
 	}
 
-	_, err := h.GetPublicKey(ctx, req.Address)
+	info, err := h.GetAccountPublicInfo(ctx, req.Address)
 	switch err {
 	case nil:
-		return contracts.CheckEmailResponse{Exists: true}, nil
+		return contracts.GetAccountInfoResponse{AccountAddressInfo: info}, nil
 	case mongo.ErrNotFound:
-		return contracts.CheckEmailResponse{Exists: false}, nil
+		return contracts.GetAccountInfoResponse{}, nil
 	default:
 		return nil, errors.Wrap(errInternal, err.Error())
 	}

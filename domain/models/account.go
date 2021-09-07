@@ -1,7 +1,6 @@
 package models
 
 import (
-	"crypto/rsa"
 	"time"
 
 	"github.com/sonalys/letterme/domain/cryptography"
@@ -16,19 +15,24 @@ type Account struct {
 	// Addresses are the many email addresses possessed by this account.
 	Addresses []Address `json:"addresses" bson:"addresses,omitempty"`
 	// PublicKey is used to encrypt all data sent to this user.
-	PublicKey cryptography.PublicKey `json:"public_key" bson:"publicKey,omitempty"`
+	PublicKey *cryptography.PublicKey `json:"public_key" bson:"publicKey,omitempty"`
 	// Ownershipkey is used to re-upload a new private key to recover the used addresses, all the previous data is lost however.
 	// It must be used only to this mean, for authentication, use JWT.
-	OwnershipKey OwnershipKey `json:"ownership_key" bson:"ownershipKey,omitempty"`
+	OwnershipKey OwnershipKey `json:"-" bson:"ownershipKey,omitempty"`
 	// DeviceCount is used to keep emails and attachments into backend for multiple read confirmations before deleting it.
 	DeviceCount uint8 `json:"device_count" bson:"deviceCount,omitempty"`
 	// TTL informs how many time messages sent to this user will persist,
 	// this information will be fetched and inserted into email.valid_until
-	TTL time.Duration `json:"ttl" bson:"ttl,omitempty"`
+	TTL          time.Duration `json:"ttl" bson:"ttl,omitempty"`
+	MaxEmailSize uint64        `json:"max_email_size" bson:"maxEmailSize"`
+	MaxInboxSize uint64        `json:"max_inbox_size" bson:"maxInboxSize"`
 }
 
 // AccountAddressInfo is used to fetch information about a given address.
 type AccountAddressInfo struct {
-	Address       Address `json:"address"`
-	rsa.PublicKey `json:"public_key"`
+	Address      Address                 `json:"address"`
+	PublicKey    *cryptography.PublicKey `json:"public_key"`
+	TTL          time.Duration           `json:"ttl" bson:"ttl,omitempty"`
+	MaxEmailSize uint64                  `json:"max_email_size" bson:"maxEmailSize"`
+	MaxInboxSize uint64                  `json:"max_inbox_size" bson:"maxInboxSize"`
 }

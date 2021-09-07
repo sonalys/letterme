@@ -27,7 +27,7 @@ func Test_Authenticate(t *testing.T) {
 
 	account := dModels.Account{
 		Addresses: []dModels.Address{dModels.Address("alysson@letter.me")},
-		PublicKey: *clientKey.GetPublicKey(),
+		PublicKey: clientKey.GetPublicKey(),
 	}
 
 	_, err = col.Create(ctx, account)
@@ -38,12 +38,12 @@ func Test_Authenticate(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, encryptedJWT)
 
-		var jwtToken string
-		err = svc.decrypt(clientKey, encryptedJWT, &jwtToken)
+		jwtToken := new(string)
+		err = svc.decrypt(clientKey, encryptedJWT, jwtToken)
 		require.NoError(t, err, "should decrypt jwt token client side")
 
 		claims := new(dModels.TokenClaims)
-		err = svc.Authenticator.ReadToken(jwtToken, claims)
+		err = svc.Authenticator.ReadToken(*jwtToken, claims)
 		require.NoError(t, err, "should read claims without errors")
 		require.Equal(t, account.Addresses[0], claims.Address, "claim address should match")
 		require.GreaterOrEqual(t, time.Now().Add(time.Hour).Unix(), claims.ExpiresAt, "claim expiry date should be expired after %s", time.Hour)

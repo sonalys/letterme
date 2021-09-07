@@ -13,5 +13,5 @@ type Handler struct {
 func RegisterHandlers(r messaging.EventRouter, s cInt.Service) {
 	handler := Handler{s}
 
-	r.AddHandler(messaging.FetchEmailPublicInfo, handler.verifyEmailExistence)
+	r.AddHandler(messaging.FetchEmailPublicInfo, handler.getAccountPublicInfo)
 }

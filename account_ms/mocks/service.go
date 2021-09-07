@@ -125,16 +125,16 @@ func (_m *Service) GetAccount(ctx context.Context, ownershipToken models.Ownersh
 	return r0, r1
 }
 
-// GetPublicKey provides a mock function with given fields: ctx, address
-func (_m *Service) GetPublicKey(ctx context.Context, address models.Address) (*cryptography.PublicKey, error) {
+// GetAccountPublicInfo provides a mock function with given fields: ctx, address
+func (_m *Service) GetAccountPublicInfo(ctx context.Context, address models.Address) (*models.AccountAddressInfo, error) {
 	ret := _m.Called(ctx, address)
 
-	var r0 *cryptography.PublicKey
-	if rf, ok := ret.Get(0).(func(context.Context, models.Address) *cryptography.PublicKey); ok {
+	var r0 *models.AccountAddressInfo
+	if rf, ok := ret.Get(0).(func(context.Context, models.Address) *models.AccountAddressInfo); ok {
 		r0 = rf(ctx, address)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*cryptography.PublicKey)
+			r0 = ret.Get(0).(*models.AccountAddressInfo)
 		}
 	}
 

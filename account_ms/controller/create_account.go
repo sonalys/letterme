@@ -42,5 +42,5 @@ func (s *Service) CreateAccount(ctx context.Context, account models.CreateAccoun
 		return nil, newAccountOperationError("create", err)
 	}
 
-	return dbAccount.OwnershipKey.EncryptValue(s.CryptographicRouter, &account.PublicKey, cryptography.RSA_OAEP)
+	return s.encrypt(account.PublicKey, dbAccount.OwnershipKey)
 }

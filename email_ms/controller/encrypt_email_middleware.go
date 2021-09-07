@@ -11,7 +11,7 @@ func (s *Service) EncryptEmailMiddleware(next smtp.EnvelopeHandler) smtp.Envelop
 	return func(pipeline *smtp.EmailPipeline) error {
 		for i := range pipeline.ProcessingEmailList {
 			pendingEmail := &pipeline.ProcessingEmailList[i]
-			encryptedEmail, err := s.encryptEnvelope(pipeline.Envelope, pendingEmail.PublicKey)
+			encryptedEmail, err := s.encryptEnvelope(pipeline.Envelope, pendingEmail.AccountInfo.PublicKey)
 			if err != nil {
 				return err
 			}

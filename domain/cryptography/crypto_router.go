@@ -9,16 +9,11 @@ import (
 const CRYPTO_CYPHER_ENV = "LM_CRYPTO_CONFIG"
 
 type AlgorithmConfiguration struct {
-	Cypher []byte   `json:"cypher"`
-	Hash   HashFunc `json:"hash"`
+	Hash HashFunc `json:"hash"`
 }
 
 func (c AlgorithmConfiguration) Validate() error {
 	var errList []error
-	if len(c.Cypher) == 0 {
-		errList = append(errList, newEmptyFieldError("cypher"))
-	}
-
 	if c.Hash == "" {
 		errList = append(errList, newEmptyFieldError("hash"))
 	}
@@ -32,6 +27,7 @@ func (c AlgorithmConfiguration) Validate() error {
 // CryptoConfig is used to fetch configurations related to
 type CryptoConfig struct {
 	Configs          map[AlgorithmName]AlgorithmConfiguration `json:"configs"`
+	Cypher           []byte                                   `json:"cypher"`
 	DefaultAlgorithm AlgorithmName                            `json:"default_algorithm"`
 }
 
@@ -62,6 +58,11 @@ func (c CryptoConfig) Validate() error {
 	if c.DefaultAlgorithm == "" {
 		errList = append(errList, newEmptyFieldError("session_name"))
 	}
+
+	if len(c.Cypher) == 0 {
+		errList = append(errList, newEmptyFieldError("cypher"))
+	}
+
 	if len(errList) > 0 {
 		return newInvalidConfigError(c, errList)
 	}
@@ -72,7 +73,8 @@ func (c CryptoConfig) Validate() error {
 // and encryption for interfaces.
 type CryptoRouter struct {
 	defaultAlgorithm AlgorithmName
-	Algorithms       map[AlgorithmName]EncryptionAlgorithm
+	cypher           []byte
+	algorithms       map[AlgorithmName]EncryptionAlgorithm
 }
 
 func stringToHash(s HashFunc) (hash.Hash, error) {
@@ -87,7 +89,8 @@ func stringToHash(s HashFunc) (hash.Hash, error) {
 func NewCryptoRouter(c *CryptoConfig) (*CryptoRouter, error) {
 	router := &CryptoRouter{
 		defaultAlgorithm: c.DefaultAlgorithm,
-		Algorithms:       make(map[AlgorithmName]EncryptionAlgorithm),
+		cypher:           c.Cypher,
+		algorithms:       make(map[AlgorithmName]EncryptionAlgorithm),
 	}
 
 	for algorithm, config := range c.Configs {
@@ -98,39 +101,54 @@ func NewCryptoRouter(c *CryptoConfig) (*CryptoRouter, error) {
 			if err != nil {
 				return nil, err
 			}
-			router.addRSA_OAEP(config.Cypher, hashAlg)
+			router.addRSA_OAEP(hashAlg)
 		}
 	}
 	return router, nil
 }
 
-func (r *CryptoRouter) addRSA_OAEP(cypher []byte, hashAlgorithm hash.Hash) {
-	r.Algorithms[RSA_OAEP] = rsa_oaep{
-		cypher: cypher,
-		hash:   hashAlgorithm,
+func (r *CryptoRouter) addRSA_OAEP(hashAlgorithm hash.Hash) {
+	r.algorithms[RSA_OAEP] = rsa_oaep{
+		hash: hashAlgorithm,
 	}
 }
 
 func (r *CryptoRouter) Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) error {
-	algorithm, ok := r.Algorithms[b.Algorithm]
+	algorithm, ok := r.algorithms[b.Algorithm]
 	if !ok {
 		return fmt.Errorf("handler for '%s' not found", b.Algorithm)
 	}
-	return algorithm.Decrypt(k, b, dst)
+	return algorithm.Decrypt(k, b, dst, r.cypher)
 }
 
 func (r *CryptoRouter) Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, error) {
-	algorithm, ok := r.Algorithms[r.defaultAlgorithm]
+	algorithm, ok := r.algorithms[r.defaultAlgorithm]
 	if !ok {
 		return nil, fmt.Errorf("handler for '%s' not found", r.defaultAlgorithm)
 	}
-	return algorithm.Encrypt(k, src)
+	return algorithm.Encrypt(k, src, r.cypher)
 }
 
 func (r *CryptoRouter) EncryptAlgorithm(k *PublicKey, src interface{}, name AlgorithmName) (*EncryptedBuffer, error) {
-	algorithm, ok := r.Algorithms[name]
+	algorithm, ok := r.algorithms[name]
 	if !ok {
 		return nil, fmt.Errorf("handler for '%s' not found", name)
 	}
-	return algorithm.Encrypt(k, src)
+	return algorithm.Encrypt(k, src, r.cypher)
+}
+
+func (r *CryptoRouter) EncryptWithCypher(k *PublicKey, src interface{}, cypher []byte) (*EncryptedBuffer, error) {
+	algorithm, ok := r.algorithms[r.defaultAlgorithm]
+	if !ok {
+		return nil, fmt.Errorf("handler for '%s' not found", r.defaultAlgorithm)
+	}
+	return algorithm.Encrypt(k, src, cypher)
+}
+
+func (r *CryptoRouter) DecryptWithCypher(k *PublicKey, src interface{}, cypher []byte) (*EncryptedBuffer, error) {
+	algorithm, ok := r.algorithms[r.defaultAlgorithm]
+	if !ok {
+		return nil, fmt.Errorf("handler for '%s' not found", r.defaultAlgorithm)
+	}
+	return algorithm.Encrypt(k, src, cypher)
 }

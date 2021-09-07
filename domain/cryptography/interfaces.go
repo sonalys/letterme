@@ -3,8 +3,8 @@ package cryptography
 // EncryptionAlgorithm will be used to allow our system to use multiple
 // encryption algorithms, that can be changed at any time.
 type EncryptionAlgorithm interface {
-	Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) error
-	Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, error)
+	Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}, cypher []byte) error
+	Encrypt(k *PublicKey, src interface{}, cypher []byte) (*EncryptedBuffer, error)
 }
 
 // CryptographicRouter is used to encrypt and decrypt EncryptedBuffer struct,
@@ -12,6 +12,8 @@ type EncryptionAlgorithm interface {
 type CryptographicRouter interface {
 	Decrypt(k *PrivateKey, b *EncryptedBuffer, dst interface{}) error
 	Encrypt(k *PublicKey, src interface{}) (*EncryptedBuffer, error)
+	EncryptWithCypher(k *PublicKey, src interface{}, cypher []byte) (*EncryptedBuffer, error)
+	DecryptWithCypher(k *PublicKey, src interface{}, cypher []byte) (*EncryptedBuffer, error)
 	EncryptAlgorithm(k *PublicKey, src interface{}, algorithm AlgorithmName) (*EncryptedBuffer, error)
 }
 

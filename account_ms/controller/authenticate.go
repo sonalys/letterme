@@ -14,8 +14,7 @@ func (s *Service) Authenticate(ctx context.Context, address dModels.Address) (en
 		return nil, newInvalidRequestError(err)
 	}
 
-	var publicKey *cryptography.PublicKey
-	publicKey, err = s.GetPublicKey(ctx, address)
+	account, err := s.GetAccountPublicInfo(ctx, address)
 	if err != nil {
 		return nil, newAccountOperationError("authenticate", err)
 	}
@@ -29,7 +28,7 @@ func (s *Service) Authenticate(ctx context.Context, address dModels.Address) (en
 		return nil, newAccountOperationError("authenticate", err)
 	}
 
-	encryptedJWT, err = s.encrypt(publicKey, token)
+	encryptedJWT, err = s.encrypt(account.PublicKey, token)
 	if err != nil {
 		return nil, newAccountOperationError("authenticate", err)
 	}

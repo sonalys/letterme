@@ -28,18 +28,18 @@ func Test_CreateAccount(t *testing.T) {
 
 	account := models.CreateAccountRequest{
 		Address:   "alysson@letter.me",
-		PublicKey: *clientKey.GetPublicKey(),
+		PublicKey: clientKey.GetPublicKey(),
 	}
 
-	var encryptedToken *cryptography.EncryptedBuffer
+	var encryptedOwnerKey *cryptography.EncryptedBuffer
 	t.Run("should create account", func(t *testing.T) {
-		encryptedToken, err = svc.CreateAccount(ctx, account)
+		encryptedOwnerKey, err = svc.CreateAccount(ctx, account)
 		require.NoError(t, err, "should create account")
-		require.NotEmpty(t, encryptedToken, "ownershipToken should not be empty")
+		require.NotEmpty(t, encryptedOwnerKey, "ownershipToken should not be empty")
 	})
 
 	decryptedOwnershipKey := new(dModels.OwnershipKey)
-	err = svc.decrypt(clientKey, encryptedToken, decryptedOwnershipKey)
+	err = svc.decrypt(clientKey, encryptedOwnerKey, decryptedOwnershipKey)
 	require.NoError(t, err, "ownership_key should be decrypted")
 
 	t.Run("dbAccount verification", func(t *testing.T) {

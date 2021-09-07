@@ -20,5 +20,5 @@ type Service interface {
 	DeleteAccount(ctx context.Context, ownershipToken dModels.OwnershipKey) (err error)
 	GetAccount(ctx context.Context, ownershipToken dModels.OwnershipKey) (account *dModels.Account, err error)
 	// Public Information
-	GetPublicKey(ctx context.Context, address dModels.Address) (publicKey *cryptography.PublicKey, err error)
+	GetAccountPublicInfo(ctx context.Context, address dModels.Address) (account *dModels.AccountAddressInfo, err error)
 }

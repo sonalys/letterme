@@ -27,7 +27,7 @@ func Test_GetPublicKey(t *testing.T) {
 	publicKey := privateKey.GetPublicKey()
 	account := dModels.Account{
 		OwnershipKey: "123",
-		PublicKey:    *publicKey,
+		PublicKey:    publicKey,
 		Addresses: []dModels.Address{
 			email,
 			dModels.Address("alysson_2@letter.me"),
@@ -44,9 +44,9 @@ func Test_GetPublicKey(t *testing.T) {
 	})
 
 	t.Run("should get account", func(t *testing.T) {
-		dbPublicKey, err := svc.GetPublicKey(ctx, email)
+		account, err := svc.GetAccountPublicInfo(ctx, email)
 		require.NoError(t, err, "should find account")
-		require.NotNil(t, dbPublicKey, "should return publicKey")
-		require.Equal(t, publicKey, dbPublicKey, "should return account")
+		require.NotNil(t, account, "should return publicKey")
+		require.Equal(t, publicKey, account.PublicKey, "should return account")
 	})
 }
